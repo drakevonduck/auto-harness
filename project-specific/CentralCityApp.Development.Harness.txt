@@ -1,0 +1,1741 @@
+# Bootstrap Development Harness
+
+You are setting up the development harness for a new project. This harness was extracted from a production app and encodes a full collaboration infrastructure for 2–4 developers working with an AI coding agent. Follow every step precisely. Where you see `{{PLACEHOLDER}}` values, ask me for the correct value before writing the file.
+
+**Required inputs before starting:**
+- `{{PROJECT_NAME}}` — npm package name (e.g. `my-app`)
+- `{{APP_TITLE}}` — human-readable app name (e.g. `My App`)
+- `{{APP_ID}}` — Capacitor app ID in reverse-domain notation (e.g. `com.myorg.myapp`) — skip if not building native mobile
+- `{{SUPABASE_PROJECT_REF}}` — production Supabase project ref (e.g. `daeqqbtanngipstrowmh`) — skip if not using Supabase
+- `{{PRODUCTION_URL}}` — production domain (e.g. `app.example.com`) — skip if unknown yet
+- `{{INCLUDE_CAPACITOR}}` — yes/no: native iOS/Android builds via Capacitor
+- `{{INCLUDE_SUPABASE}}` — yes/no: Supabase backend
+- `{{INCLUDE_MAPBOX}}` — yes/no: Mapbox GL JS map
+
+Ask me for each of these before writing any files.
+
+---
+
+## What this harness provides
+
+- **Next.js 16 + React 19 + TypeScript 5** (App Router, Turbopack, strict mode)
+- **Tailwind CSS v4** with PostCSS
+- **ESLint v9** flat config
+- **Three-environment model**: local Docker → staging → production, with gated migration promotion
+- **Supabase** backend pattern (Auth, Postgres, RLS, RPC, local dev via Docker)
+- **Serwist PWA** service worker
+- **Capacitor** native mobile shells (iOS/Android)
+- **GitHub Actions CI** (TypeScript + ESLint on every PR)
+- **PR template** enforcing documentation checklists
+- **Claude Code harness**: PostToolUse command logging hook, dev journal generator, permission scopes
+- **Structured docs**: ADRs, PRDs, risk register, remediation backlog, dev journal
+- **Developer workflow SOP**: branching strategy, migration coordination, work-area ownership
+
+---
+
+## Step 1 — Root configuration files
+
+Create the following files at the repo root.
+
+### `.nvmrc`
+```
+22
+```
+
+### `package.json`
+```json
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:staging": "dotenv -e .env.staging.local -- next dev",
+    "build": "next build",
+    "build:mobile": "NEXT_OUTPUT=export next build && npx cap sync",
+    "start": "next start",
+    "lint": "eslint",
+    "db:validate": "bash scripts/db-promote.sh validate",
+    "db:promote:staging": "bash scripts/db-promote.sh staging",
+    "db:promote:production": "bash scripts/db-promote.sh production"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
+    "@serwist/next": "^9.5.6",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.99.3",
+    "mapbox-gl": "^3.19.0",
+    "next": "^16.2.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "serwist": "^9.5.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+```
+
+Remove `@capacitor/*` entries if `{{INCLUDE_CAPACITOR}}` is no.
+Remove `@supabase/*` entries if `{{INCLUDE_SUPABASE}}` is no.
+Remove `mapbox-gl` if `{{INCLUDE_MAPBOX}}` is no.
+Remove `build:mobile`, `db:*` scripts if the corresponding feature is excluded.
+
+### `tsconfig.json`
+```json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts",
+    "**/*.mts"
+  ],
+  "exclude": ["node_modules"]
+}
+```
+
+### `next.config.ts`
+```typescript
+import withSerwist from "@serwist/next";
+import type { NextConfig } from "next";
+
+const isMobileExport = process.env.NEXT_OUTPUT === "export";
+
+const nextConfig: NextConfig = {
+  turbopack: {},
+  ...(isMobileExport && { output: "export" }),
+};
+
+export default withSerwist({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV !== "production",
+})(nextConfig);
+```
+
+If `{{INCLUDE_CAPACITOR}}` is no, remove `isMobileExport` and the spread.
+If not using Serwist/PWA, simplify to a plain `export default nextConfig`.
+
+### `postcss.config.mjs`
+```javascript
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+export default config;
+```
+
+### `eslint.config.mjs`
+```javascript
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
+
+const eslintConfig = defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([
+    ".next/**",
+    "out/**",
+    "build/**",
+    "next-env.d.ts",
+    "android/**",    // Capacitor-generated
+    "ios/**",        // Capacitor-generated
+    "reference/**",  // Design reference, not production code
+  ]),
+]);
+
+export default eslintConfig;
+```
+
+Remove `android/**` and `ios/**` ignores if `{{INCLUDE_CAPACITOR}}` is no.
+
+### `capacitor.config.ts` (skip if `{{INCLUDE_CAPACITOR}}` is no)
+```typescript
+import type { CapacitorConfig } from "@capacitor/cli";
+
+const config: CapacitorConfig = {
+  appId: "{{APP_ID}}",
+  appName: "{{APP_TITLE}}",
+  webDir: "out",
+  server: {
+    // For live reload during dev, uncomment and set your local IP:
+    // url: "http://YOUR_LOCAL_IP:3000",
+    androidScheme: "https",
+    iosScheme: "https",
+  },
+  android: {
+    buildOptions: {
+      keystorePath: undefined,
+      keystoreAlias: undefined,
+    },
+  },
+  ios: {
+    contentInset: "automatic",
+  },
+};
+
+export default config;
+```
+
+### `.gitignore`
+```
+# editor
+*.swp
+*.swo
+*~
+
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# build
+.next/
+out/
+dist/
+build/
+
+# testing
+/coverage
+
+# env — never commit secrets
+.env
+.env.*
+!.env.example
+!.env.staging.example
+!.env.staging.local.example
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# ide
+.vscode/
+.idea/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# serwist (generated at build time)
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/swe-worker-*.js.map
+
+# capacitor (regenerate with `npx cap add`)
+android/
+ios/
+
+# claude code (local agent logs — not committed)
+.claude/command-log.txt
+.claude/log-level.txt
+.agents/
+.claude/settings.json
+```
+
+### `.env.example`
+```bash
+# ─── {{APP_TITLE}} — Environment Variables ───────────────────────────────────
+# Copy to .env.local and fill in values. Never commit .env.local.
+
+# ── Supabase ──────────────────────────────────────────────────────────────────
+# Required. Get from Supabase project → Settings → API.
+# .env.local should point at PRODUCTION Supabase.
+# For local dev, .env.development.local overrides these automatically.
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
+
+# ── Mapbox ────────────────────────────────────────────────────────────────────
+# Required for map tab. Get token at https://account.mapbox.com
+# Without this, map falls back to static SVG.
+NEXT_PUBLIC_MAPBOX_TOKEN=
+
+# ── Analytics (future) ────────────────────────────────────────────────────────
+# NEXT_PUBLIC_POSTHOG_KEY=
+# NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+
+# ── Error Tracking (future) ───────────────────────────────────────────────────
+# NEXT_PUBLIC_SENTRY_DSN=
+```
+
+Remove sections for features not included.
+
+### `.env.staging.example`
+```bash
+# Staging DB credentials for migration promotion script.
+# Copy to .env.staging (gitignored). Never commit.
+STAGING_DB_URL=postgresql://postgres:[password]@db.[staging-project-ref].supabase.co:5432/postgres
+```
+
+### `.env.staging.local.example`
+```bash
+# Staging NEXT_PUBLIC vars for `npm run dev:staging`.
+# Copy to .env.staging.local (gitignored). Never commit.
+NEXT_PUBLIC_SUPABASE_URL=https://[staging-project-ref].supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
+NEXT_PUBLIC_MAPBOX_TOKEN=
+```
+
+---
+
+## Step 2 — App Router skeleton
+
+### `app/layout.tsx`
+```typescript
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "{{APP_TITLE}}",
+  description: "{{APP_TITLE}}",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+### `app/globals.css`
+```css
+@import "tailwindcss";
+```
+
+### `app/page.tsx`
+```typescript
+export default function Home() {
+  return (
+    <main>
+      <h1>{{APP_TITLE}}</h1>
+    </main>
+  );
+}
+```
+
+### `app/sw.ts` (skip if not using PWA)
+```typescript
+import { defaultCache } from "@serwist/next/worker";
+import { Serwist } from "serwist";
+
+const serwist = new Serwist({
+  precacheEntries: self.__SW_MANIFEST,
+  skipWaiting: true,
+  clientsClaim: true,
+  navigationPreload: true,
+  runtimeCaching: defaultCache,
+});
+
+serwist.addEventListeners();
+```
+
+### `app/manifest.ts` (skip if not using PWA)
+```typescript
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "{{APP_TITLE}}",
+    short_name: "{{APP_TITLE}}",
+    description: "{{APP_TITLE}}",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#000000",
+    theme_color: "#000000",
+    icons: [
+      { src: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+  };
+}
+```
+
+### `app/offline/page.tsx` (skip if not using PWA)
+```typescript
+export default function OfflinePage() {
+  return (
+    <main>
+      <h1>You're offline</h1>
+      <p>Check your connection and try again.</p>
+    </main>
+  );
+}
+```
+
+---
+
+## Step 3 — Supabase utilities (skip entire section if `{{INCLUDE_SUPABASE}}` is no)
+
+### `utils/supabase/client.ts`
+```typescript
+import { createBrowserClient } from "@supabase/ssr";
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!
+  );
+}
+```
+
+### `utils/supabase/server.ts`
+```typescript
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Ignore: called from Server Component, cookies are read-only
+          }
+        },
+      },
+    }
+  );
+}
+```
+
+### `utils/supabase/middleware.ts`
+```typescript
+import { createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
+
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+
+  // Graceful degradation: if env vars are missing, skip auth middleware
+  if (!supabaseUrl || !supabaseKey) {
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
+
+  await supabase.auth.getUser();
+  return supabaseResponse;
+}
+```
+
+### `middleware.ts` (at repo root)
+```typescript
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/utils/supabase/middleware";
+
+export async function middleware(request: NextRequest) {
+  return await updateSession(request);
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
+};
+```
+
+---
+
+## Step 4 — Supabase local config (skip if `{{INCLUDE_SUPABASE}}` is no)
+
+### `supabase/config.toml`
+```toml
+project_id = "{{PROJECT_NAME}}"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+[storage.s3_protocol]
+enabled = true
+port = 54321
+tenant_id = "stub"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["https://127.0.0.1:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = true
+enable_manual_linking = false
+minimum_password_length = 6
+password_requirements = ""
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+secure_password_change = false
+max_frequency = "1s"
+
+[auth.email.smtp]
+host = "supabase-mail"
+port = 2500
+user = "fake"
+pass = "fake"
+admin_email = "admin@email.com"
+sender_name = "{{APP_TITLE}}"
+
+[auth.sms]
+enable_signup = true
+enable_confirmations = false
+template = "Your {{APP_TITLE}} code is {{ .Code }}"
+max_frequency = "5s"
+
+[auth.external.anonymous]
+enabled = true
+
+[auth.rate_limit]
+email_sent = 2
+sms_sent = 30
+anonymous_users = 30
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 8083
+
+[analytics]
+enabled = false
+port = 54327
+backend = "postgres"
+```
+
+### `supabase/seed.sql`
+```sql
+-- Seed data for local development.
+-- Applied automatically by `npx supabase db reset`.
+-- Add representative test records here as the schema evolves.
+```
+
+---
+
+## Step 5 — Database promotion script (skip if `{{INCLUDE_SUPABASE}}` is no)
+
+### `scripts/db-promote.sh`
+```bash
+#!/usr/bin/env bash
+# scripts/db-promote.sh
+#
+# Migration promotion workflow: local → staging → production
+#
+# Usage:
+#   ./scripts/db-promote.sh validate              Reset local DB + lint
+#   ./scripts/db-promote.sh staging               Validate locally, push to staging
+#   ./scripts/db-promote.sh production            Dry-run against production (safe)
+#   FORCE=1 ./scripts/db-promote.sh production    Apply migrations to production
+#
+# Via npm scripts:
+#   npm run db:validate
+#   npm run db:promote:staging
+#   npm run db:promote:production       (dry-run)
+#   FORCE=1 npm run db:promote:production
+#
+# Prerequisites:
+#   - Supabase CLI: npx supabase
+#   - Local Supabase running for validate/staging: supabase start
+#   - Staging credentials in .env.staging (see .env.staging.example)
+#   - Production project linked: supabase link --project-ref {{SUPABASE_PROJECT_REF}}
+
+set -euo pipefail
+
+COMMAND="${1:-help}"
+
+# ── Load staging credentials ──────────────────────────────────────────────────
+if [ -f ".env.staging" ]; then
+  set -a
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// }" ]] && continue
+    export "$line"
+  done < .env.staging
+  set +a
+fi
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+step() { echo ""; echo "=== $* ==="; }
+ok()   { echo ""; echo "✓ $*"; }
+fail() { echo ""; echo "✗ $*" >&2; exit 1; }
+
+# ── Commands ──────────────────────────────────────────────────────────────────
+
+cmd_validate() {
+  step "1/2: Reset local database (includes seed data)"
+  npx supabase db reset || {
+    echo "  (db reset exited non-zero — likely transient 502 during container restart)"
+    echo "  Waiting 5s for containers to stabilize..."
+    sleep 5
+  }
+
+  step "2/2: Lint schema against local"
+  npx supabase db lint --local --fail-on error
+
+  ok "Local validation passed — safe to promote"
+}
+
+cmd_staging() {
+  if [ -z "${STAGING_DB_URL:-}" ]; then
+    fail "STAGING_DB_URL is not set.\nCopy .env.staging.example → .env.staging and fill in staging credentials."
+  fi
+
+  step "1/3: Validate locally first"
+  cmd_validate
+
+  step "2/3: Dry-run against staging"
+  npx supabase db push --db-url "$STAGING_DB_URL" --dry-run
+
+  step "3/3: Push migrations to staging"
+  npx supabase db push --db-url "$STAGING_DB_URL"
+
+  ok "Staging promotion complete"
+  echo "    Verify in the Supabase dashboard before promoting to production."
+}
+
+cmd_production() {
+  if [ "${FORCE:-}" != "1" ]; then
+    echo ""
+    echo "This is a dry-run. No changes will be applied to production."
+    echo ""
+    npx supabase db push --dry-run
+    echo ""
+    echo "─────────────────────────────────────────────────────────────"
+    echo "To apply these migrations to production, run:"
+    echo "  FORCE=1 ./scripts/db-promote.sh production"
+    echo "  FORCE=1 npm run db:promote:production"
+    echo ""
+    echo "Ensure staging has been validated first:"
+    echo "  ./scripts/db-promote.sh staging"
+    echo "─────────────────────────────────────────────────────────────"
+    exit 0
+  fi
+
+  step "1/2: Final dry-run against production"
+  npx supabase db push --dry-run
+
+  step "2/2: Applying migrations to production"
+  npx supabase db push
+
+  ok "Production promotion complete"
+  echo ""
+  echo "Next steps:"
+  echo "  1. Update docs/database.md — 'Last validated' date and 'Migrations applied' list"
+  echo "  2. Confirm in the Supabase dashboard"
+  echo "  3. Run dev journal: bash .claude/hooks/generate-journal-entry.sh"
+}
+
+cmd_help() {
+  echo ""
+  echo "Usage: ./scripts/db-promote.sh <command>"
+  echo ""
+  echo "Commands:"
+  echo "  validate     Reset local DB + lint (no remote changes)"
+  echo "  staging      Validate locally, then push to staging"
+  echo "  production   Dry-run against production; set FORCE=1 to apply"
+  echo ""
+  echo "Environment:"
+  echo "  FORCE=1      Required to apply migrations to production (safety gate)"
+  echo "  .env.staging Staging DB credentials (see .env.staging.example)"
+  echo ""
+}
+
+case "$COMMAND" in
+  validate)   cmd_validate ;;
+  staging)    cmd_staging ;;
+  production) cmd_production ;;
+  *)          cmd_help; exit 1 ;;
+esac
+```
+
+Make it executable: `chmod +x scripts/db-promote.sh`
+
+---
+
+## Step 6 — GitHub Actions CI
+
+### `.github/workflows/ci.yml`
+```yaml
+name: CI
+
+on:
+  pull_request:
+    branches: [main, preview]
+
+jobs:
+  checks:
+    name: TypeScript & ESLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+```
+
+### `.github/pull_request_template.md`
+```markdown
+## What & Why
+
+<!-- One paragraph: what changed and why. Link to the governing artifact. -->
+
+**Artifact:** <!-- [PRD-002](docs/product/PRD-002-...) / ADR-NNNN / QA-NNN / etc. -->
+
+---
+
+## Vercel Preview URL
+
+<!-- Paste the ephemeral Vercel preview URL here. Reviewer must visit it. -->
+
+---
+
+## Checklist
+
+### Code quality
+- [ ] `npx tsc --noEmit` passes (0 errors)
+- [ ] `npm run lint` passes (0 errors)
+
+### Documentation (complete all that apply)
+- [ ] `docs/database.md` updated — if any table, enum, index, RLS policy, or RPC function changed
+- [ ] PRD linked or created — if this is a significant new feature
+- [ ] ADR linked or created — if this involves an architectural or platform decision
+- [ ] `docs/security/risk-register.md` updated — if a risk was identified or closed
+- [ ] `docs/quality/remediation-backlog.md` updated — if a QA item was opened or resolved
+- [ ] N/A — no documentation changes required (explain briefly below if so)
+
+### Database migrations (complete if migrations are included)
+- [ ] `npm run db:validate` passed locally
+- [ ] Migration ownership was announced in team channel before starting
+- [ ] `db:promote:staging` will not run until this PR is merged to `preview`
+
+### Review
+- [ ] Reviewer has visited the Vercel preview URL
+- [ ] PR is targeting `preview` (not `main` directly), unless this is a `preview → main` promotion PR
+```
+
+---
+
+## Step 7 — Claude Code harness
+
+### `.claude/settings.local.json`
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(supabase db:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/log-command.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Note: `.claude/settings.json` (base permissions) is gitignored. `settings.local.json` (hook wiring, extended permissions) is committed.
+
+### `.claude/log-level.txt`
+```
+status
+```
+
+Valid values: `commands` (command only) | `status` (command + exit code) | `full` (command + exit code + first 50 lines of output)
+
+### `.claude/hooks/log-command.sh`
+```bash
+#!/usr/bin/env bash
+# PostToolUse hook — logs Bash commands with configurable verbosity.
+# Log level from .claude/log-level.txt. Output to .claude/command-log.txt.
+
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+LOG_FILE="$PROJECT_DIR/.claude/command-log.txt"
+LEVEL_FILE="$PROJECT_DIR/.claude/log-level.txt"
+
+LEVEL="status"
+if [[ -f "$LEVEL_FILE" ]]; then
+  LEVEL="$(cat "$LEVEL_FILE" | tr -d '[:space:]')"
+fi
+
+EVENT="$(cat)"
+TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+COMMAND="$(echo "$EVENT" | jq -r '.tool_input.command // "unknown"')"
+
+case "$LEVEL" in
+  commands)
+    echo "[$TIMESTAMP] $ $COMMAND" >> "$LOG_FILE"
+    ;;
+  status)
+    EXIT_CODE="$(echo "$EVENT" | jq -r '.tool_result.exit_code // "?"')"
+    echo "[$TIMESTAMP] $ $COMMAND  [exit: $EXIT_CODE]" >> "$LOG_FILE"
+    ;;
+  full)
+    EXIT_CODE="$(echo "$EVENT" | jq -r '.tool_result.exit_code // "?"')"
+    OUTPUT="$(echo "$EVENT" | jq -r '.tool_result.stdout // ""' | head -50)"
+    echo "[$TIMESTAMP] $ $COMMAND  [exit: $EXIT_CODE]" >> "$LOG_FILE"
+    if [[ -n "$OUTPUT" ]]; then
+      echo "$OUTPUT" | sed 's/^/  > /' >> "$LOG_FILE"
+    fi
+    echo "" >> "$LOG_FILE"
+    ;;
+  *)
+    echo "[$TIMESTAMP] $ $COMMAND" >> "$LOG_FILE"
+    ;;
+esac
+```
+
+Make executable: `chmod +x .claude/hooks/log-command.sh`
+
+### `.claude/hooks/generate-journal-entry.sh`
+```bash
+#!/usr/bin/env bash
+# Auto-generates a dev journal entry from git history.
+# Usage: bash .claude/hooks/generate-journal-entry.sh [since-date]
+#   since-date: ISO date (YYYY-MM-DD). Defaults to last journal entry date or 7 days ago.
+
+set -euo pipefail
+
+JOURNAL_FILE="docs/dev-journal.md"
+TODAY=$(date +%Y-%m-%d)
+
+if [[ -n "${1:-}" ]]; then
+  SINCE="$1"
+else
+  LAST_DATE=$(grep -oE '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' "$JOURNAL_FILE" 2>/dev/null | tail -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+  if [[ -n "$LAST_DATE" ]]; then
+    SINCE="$LAST_DATE"
+  else
+    SINCE=$(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d)
+  fi
+fi
+
+COMMITS=$(git log --oneline --since="$SINCE" --format="- %s" 2>/dev/null || echo "- (no commits found)")
+DIFF_STAT=$(git diff --stat "$(git log --since="$SINCE" --format="%H" --reverse 2>/dev/null | head -1)^..HEAD" 2>/dev/null | tail -1 || echo "(unable to compute)")
+
+DECISIONS=""
+ADR_FILES=$(git diff --name-only --since="$SINCE" -- "docs/decisions/" 2>/dev/null | grep -v TEMPLATE || true)
+if [[ -n "$ADR_FILES" ]]; then
+  while IFS= read -r adr; do
+    TITLE=$(head -1 "$adr" 2>/dev/null | sed 's/^# //')
+    DECISIONS="${DECISIONS}\n- ${TITLE}"
+  done <<< "$ADR_FILES"
+fi
+
+ISSUES=$(git log --oneline --since="$SINCE" --format="%s" 2>/dev/null | grep -iE '(fix|bug|issue|error|broken|crash)' | sed 's/^/- /' || true)
+
+ENTRY="## ${TODAY} — Session
+
+**Commits since ${SINCE}:**
+${COMMITS}
+
+**Files changed:**
+- ${DIFF_STAT}"
+
+if [[ -n "$DECISIONS" ]]; then
+  ENTRY="${ENTRY}
+
+**Decisions:**$(echo -e "$DECISIONS")"
+fi
+
+if [[ -n "$ISSUES" ]]; then
+  ENTRY="${ENTRY}
+
+**Issues / Fixes:**
+${ISSUES}"
+fi
+
+ENTRY="${ENTRY}
+
+**Notes:**
+_[Your observations, context, or next-step thinking here]_
+
+---
+"
+
+if [[ ! -f "$JOURNAL_FILE" ]]; then
+  cat > "$JOURNAL_FILE" << 'HEADER'
+# Development Journal
+
+Auto-generated session entries from git history, with space for free-form notes.
+Run `bash .claude/hooks/generate-journal-entry.sh` to add an entry.
+
+---
+HEADER
+fi
+
+echo "" >> "$JOURNAL_FILE"
+echo -e "$ENTRY" >> "$JOURNAL_FILE"
+
+echo "Journal entry appended to ${JOURNAL_FILE} (since ${SINCE})"
+```
+
+Make executable: `chmod +x .claude/hooks/generate-journal-entry.sh`
+
+---
+
+## Step 8 — Documentation structure
+
+Create the following directories and files.
+
+### `docs/README.md`
+```markdown
+# {{APP_TITLE}} — Documentation
+
+This directory contains all living documentation for the project.
+
+| Directory | Contents |
+|-----------|----------|
+| `decisions/` | Architecture Decision Records (ADRs) |
+| `product/` | Product Requirements Documents (PRDs) |
+| `contributing/` | Developer workflow, onboarding |
+| `ops/` | Environment setup, runbooks |
+| `quality/` | Remediation backlog, review playbook |
+| `security/` | Risk register |
+| `archive/` | Superseded documents |
+```
+
+### `docs/decisions/TEMPLATE.md`
+```markdown
+# ADR-NNNN: [Title]
+
+**Status:** proposed | accepted | superseded by ADR-NNNN
+**Date:** YYYY-MM-DD
+**Context source:** [link to conversation, issue, or meeting notes]
+
+## Context
+
+[Why this decision came up — the problem or trigger]
+
+## Decision
+
+[What we decided and why]
+
+## Consequences
+
+[What changes as a result — good and bad]
+
+## Alternatives Considered
+
+[Brief note on what else was evaluated]
+```
+
+### `docs/product/TEMPLATE.md`
+```markdown
+# PRD-NNNN: [Title]
+
+**Status:** draft | review | accepted | deferred | superseded by PRD-NNNN
+**Date:** YYYY-MM-DD
+**Author:** [name]
+**Stakeholders:** [who needs to review/approve]
+
+---
+
+## Project Overview
+
+[High-level summary: what this is, and the core problem it solves. 2–3 sentences.]
+
+## Target Audience
+
+| Persona | Description | Primary needs |
+|---------|-------------|---------------|
+| [Name]  | [Who they are] | [What they need] |
+
+## User Stories
+
+> Format: As a [persona], I want to [action], so that [value].
+
+- As a ..., I want to ..., so that ...
+
+## Functional Requirements
+
+### Must Have (P0)
+- [ ] [Requirement]
+
+### Should Have (P1)
+- [ ] [Requirement]
+
+### Nice to Have (P2)
+- [ ] [Requirement]
+
+### Technical Constraints
+- [Constraint]
+
+## Success Metrics
+
+| KPI | Target | Measurement method |
+|-----|--------|--------------------|
+| [Metric] | [Value] | [How measured] |
+
+## Out of Scope
+
+- [Item] — *why it's excluded*
+
+## Dependencies
+
+- [Other PRDs, ADRs, external systems]
+
+## Open Questions
+
+- [ ] [Question requiring resolution before implementation]
+
+## Related Documents
+
+- [Links to ADRs, design files, etc.]
+```
+
+### `docs/security/risk-register.md`
+```markdown
+# Risk Register — {{APP_TITLE}}
+
+Last updated: {{TODAY}}
+
+## Format
+
+| ID | Description | Likelihood | Impact | Status | Mitigation |
+|----|-------------|-----------|--------|--------|------------|
+| R-NNN | [Risk] | Low/Med/High | Low/Med/High | Open/Mitigating/Closed | [What was done] |
+
+## Risks
+
+| ID | Description | Likelihood | Impact | Status | Mitigation |
+|----|-------------|-----------|--------|--------|------------|
+| R-001 | No risks logged yet | — | — | — | — |
+```
+
+### `docs/quality/remediation-backlog.md`
+```markdown
+# Remediation Backlog — {{APP_TITLE}}
+
+Last updated: {{TODAY}}
+
+## Format
+
+Items from formal reviews. Priority: P0 (blocking) → P1 (high) → P2 (normal).
+
+| ID | Priority | Status | Description | Linked Risk |
+|----|----------|--------|-------------|-------------|
+| QA-NNN | P0/P1/P2 | Open/Done | [What to fix] | R-NNN |
+
+## Open
+
+| ID | Priority | Status | Description | Linked Risk |
+|----|----------|--------|-------------|-------------|
+
+## Completed
+
+| ID | Priority | Status | Description | Linked Risk |
+|----|----------|--------|-------------|-------------|
+```
+
+### `docs/quality/review-playbook.md`
+```markdown
+# Review Playbook — {{APP_TITLE}}
+
+## When to run a formal review
+
+- Before any soft launch or stakeholder demo with production claims
+- Weekly during active backend/security work
+- After changes to auth, storage, schema trust boundaries, or RLS policies
+
+## Architecture review checklist
+
+- [ ] All tables have RLS enabled
+- [ ] No direct browser INSERT/UPDATE to sensitive tables
+- [ ] RPCs enforce idempotency where required
+- [ ] Auth flow tested end-to-end (sign-up, sign-in, anonymous upgrade)
+- [ ] Environment variables: no secrets in `NEXT_PUBLIC_*`
+- [ ] Migrations promoted through all three environments before production
+
+## Security review checklist
+
+- [ ] RLS policies reviewed for each table
+- [ ] No user-controlled inputs used in raw SQL
+- [ ] Service role key never exposed to the browser
+- [ ] Anonymous user data preserved correctly on upgrade
+- [ ] Risk register updated with any new findings
+```
+
+### `docs/contributing/developer-workflow.md`
+
+Create this file with the following content (replace `{{APP_TITLE}}`, `{{PRODUCTION_URL}}`, and `{{SUPABASE_PROJECT_REF}}` with their values):
+
+```markdown
+# Developer Workflow — {{APP_TITLE}}
+
+Standing operating procedure for 2–4 developers. Read before opening your first branch.
+
+---
+
+## 0. Prerequisites and Local Setup
+
+### Required tools
+
+| Tool | Version | Install |
+|------|---------|---------|
+| **Node.js** | 22 (pinned in `.nvmrc`) | `nvm install` |
+| **npm** | Ships with Node | Included |
+| **Docker Desktop** | Latest | docker.com/products/docker-desktop |
+| **Supabase CLI** | Latest | `npx supabase` |
+| **Git** | 2.30+ | Pre-installed or `brew install git` |
+
+### First-time setup
+
+```bash
+git clone <repo-url> && cd {{PROJECT_NAME}}
+nvm install
+npm install
+
+# Start local Supabase (Docker must be running)
+npx supabase start
+
+# Create .env.development.local with the anon key printed above
+cat > .env.development.local << 'EOF'
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=<anon-key-from-supabase-start>
+EOF
+
+# Create .env.local from template
+cp .env.example .env.local
+
+# Set up staging env files
+cp .env.staging.example .env.staging
+cp .env.staging.local.example .env.staging.local
+
+# Reset local database
+npx supabase db reset
+
+# Link CLI to production
+npx supabase link --project-ref {{SUPABASE_PROJECT_REF}}
+
+# Start dev server
+npm run dev  # → http://localhost:3000
+```
+
+### Local service URLs
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| App | `http://localhost:3000` | Dev server |
+| Supabase API | `http://localhost:54321` | REST/Auth |
+| Supabase Studio | `http://localhost:54323` | DB browser |
+| Inbucket | `http://localhost:54324` | Catches OTP emails |
+| Postgres | `localhost:54322` | Direct DB access |
+
+### Environment file precedence
+
+| File | Committed | Loaded when | Points at |
+|------|-----------|-------------|-----------|
+| `.env.development.local` | No | `npm run dev` | Local Supabase |
+| `.env.staging.local` | No | `npm run dev:staging` | Staging Supabase |
+| `.env.local` | No | `npm run build`, Capacitor | Production Supabase |
+| `.env.staging` | No | `db:promote:staging` (script only) | Staging DB URL |
+| `.env.example` | Yes | Never (template) | — |
+
+`.env.development.local` overrides `.env.local` in dev — you never accidentally hit production during local work.
+
+---
+
+## 1. Branching Strategy
+
+| Branch | Purpose | Deploys to |
+|--------|---------|------------|
+| `main` | Production. Always live. | `{{PRODUCTION_URL}}` |
+| `preview` | Integration branch. All features merge here first. | Vercel Preview + staging Supabase |
+| `feature/<slug>` / `fix/<slug>` | Short-lived, one task per branch. | Ephemeral Vercel preview URL |
+
+No direct pushes to `main` or `preview`. All changes arrive via PR.
+
+### Branch naming
+
+Tie branch name to governing artifact:
+```
+feature/prd-002-profile-edit
+fix/qa-008-test-strategy
+chore/update-supabase-client
+```
+
+---
+
+## 2. Daily Routine
+
+```bash
+git checkout main && git pull origin main
+git checkout -b feature/prd-002-profile-edit
+
+# Work and commit frequently
+git add <files>
+git commit -m "[PRD-002] Add profile edit screen skeleton"
+
+# Push and open PR targeting `preview`
+git push origin feature/prd-002-profile-edit
+```
+
+Branch from `main`. Merge to `preview` first. Never merge feature branches directly to `main`.
+
+---
+
+## 3. Database Migration Coordination
+
+**Only one developer owns an in-flight migration at a time.** Announce in team channel before touching `supabase/migrations/`.
+
+### Promotion flow
+
+```
+Local (npm run dev)
+  → npm run db:validate
+  → PR merged to preview
+  → npm run db:promote:staging
+  → QA on staging Vercel deployment
+  → PR merged to main
+  → FORCE=1 npm run db:promote:production
+  → Update docs/database.md
+  → Run journal: bash .claude/hooks/generate-journal-entry.sh
+```
+
+Never run `db:promote:production` without a second pair of eyes.
+
+---
+
+## 4. Pull Request Protocol
+
+### Title format
+```
+[PRD-002] Add profile edit screen
+[QA-008] Define automated test strategy
+[ADR-NNNN] Add places table
+[FIX] Resolve image flicker on iOS
+```
+
+- At least 1 approval required before merge
+- Reviewer visits the Vercel preview URL
+- **Squash and Merge** is the default
+- Target branch: `preview` (never `main` directly)
+
+---
+
+## 5. Documentation Ownership
+
+### Before you branch
+
+| What you're building | What you need first |
+|----------------------|---------------------|
+| Significant new feature | PRD in `docs/product/` |
+| Architectural decision | ADR in `docs/decisions/` |
+| Bug fix or minor enhancement | QA item in `docs/quality/remediation-backlog.md` |
+
+### During the PR
+
+Update these in the PR diff — not in a follow-up commit:
+
+| Change | Update |
+|--------|--------|
+| Table, enum, index, or RLS policy | `docs/database.md` |
+| New RPC or mutation flow | `docs/database.md` — RPC Functions section |
+| Risk identified or closed | `docs/security/risk-register.md` |
+| QA item resolved | `docs/quality/remediation-backlog.md` |
+
+---
+
+## 6. CI Checks
+
+Every PR automatically runs:
+- `npx tsc --noEmit` — must pass (0 errors)
+- `npm run lint` — must pass (0 errors)
+
+Fix the branch. Do not ask for exceptions.
+
+---
+
+## 7. The 30-Minute Rule
+
+If a decision takes more than 30 minutes: pick the simpler option and move on. Post in team channel if blocked — don't stall the branch.
+
+---
+
+## Quick Reference
+
+```
+New work?       → git checkout main && git pull && git checkout -b feature/<slug>
+PR target?      → always `preview`
+Migration?      → announce in team channel first, one owner
+Doc update?     → in the PR diff, not after
+CI failing?     → fix the branch
+Wrong env?      → DevTools → Network → filter supabase → check request host
+OTP emails?     → http://localhost:54324 (Inbucket)
+Inspect DB?     → http://localhost:54323 (Supabase Studio)
+Debug PWA?      → npm run build && npm start
+Stuck >30 min?  → simpler option, keep moving
+```
+```
+
+### `docs/ops/environment-setup.md`
+```markdown
+# Environment Setup — {{APP_TITLE}}
+
+## Three environments
+
+| Environment | App URL | Supabase |
+|-------------|---------|----------|
+| **Local** | `localhost:3000` | Docker (`supabase start`) |
+| **Staging** | Vercel preview (stable) | Separate Supabase project |
+| **Production** | `{{PRODUCTION_URL}}` | Production Supabase project |
+
+## 1. Local setup
+
+See `docs/contributing/developer-workflow.md § 0`.
+
+## 2a. Staging Supabase setup (one-time)
+
+1. Create a new Supabase project in the dashboard (name: `{{PROJECT_NAME}}-staging`)
+2. Note the project ref and DB password
+3. Populate `.env.staging`:
+   ```
+   STAGING_DB_URL=postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+   ```
+4. Populate `.env.staging.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://[ref].supabase.co
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=[anon key]
+   ```
+5. Run `npm run db:promote:staging` to push migrations
+6. In Vercel → Settings → Environment Variables, add staging `NEXT_PUBLIC_*` scoped to "Preview"
+
+## 2b. Production Supabase setup (one-time)
+
+1. Create production Supabase project (name: `{{PROJECT_NAME}}`)
+2. Populate `.env.local` with production credentials
+3. Link CLI: `npx supabase link --project-ref {{SUPABASE_PROJECT_REF}}`
+4. Push initial migrations: `FORCE=1 npm run db:promote:production`
+
+## 3. Migration promotion
+
+```bash
+npm run db:validate                    # local lint + reset
+npm run db:promote:staging             # push to staging
+FORCE=1 npm run db:promote:production  # push to production (requires staging first)
+```
+
+## 4. Recovery checklist
+
+- Supabase Studio unavailable: restart with `npx supabase stop && npx supabase start`
+- Wrong env active: check DevTools → Network → filter supabase → look at request host
+- Production accidentally targeted: `.env.development.local` overrides `.env.local` in dev — verify it exists and has correct values
+```
+
+### `docs/database.md`
+```markdown
+# Database Reference — {{APP_TITLE}}
+
+**Last validated:** {{TODAY}}
+**Production project ref:** {{SUPABASE_PROJECT_REF}}
+
+---
+
+## Migrations applied (production)
+
+| Migration file | Applied | Description |
+|---------------|---------|-------------|
+| (none yet) | — | Initial project |
+
+---
+
+## Tables
+
+_Document tables here as migrations are added._
+
+---
+
+## RPC Functions
+
+_Document RPC functions here as they are created._
+
+---
+
+## RLS Policies
+
+_Document RLS policies here._
+
+---
+
+## Auth flow
+
+_Document auth flow here (anonymous → email/phone upgrade, session handling)._
+
+---
+
+## Environments
+
+| Environment | Supabase URL | Notes |
+|-------------|-------------|-------|
+| Local | `http://127.0.0.1:54321` | Docker via `supabase start` |
+| Staging | `https://[staging-ref].supabase.co` | See `.env.staging.local.example` |
+| Production | `https://{{SUPABASE_PROJECT_REF}}.supabase.co` | `.env.local` |
+```
+
+### `docs/dev-journal.md`
+```markdown
+# Development Journal
+
+Auto-generated session entries from git history, with space for free-form notes.
+Run `bash .claude/hooks/generate-journal-entry.sh` to add an entry.
+
+---
+```
+
+### `docs/archive/README.md`
+```markdown
+# Archive
+
+Superseded documents live here. Each entry notes what replaced it.
+
+| Document | Superseded by |
+|----------|--------------|
+| (empty)  | — |
+```
+
+---
+
+## Step 9 — CLAUDE.md
+
+Create a `CLAUDE.md` at the repo root. This is the primary instruction file for Claude Code and any AI agent working in this repository.
+
+```markdown
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working with code in this repository.
+
+## What This Is
+
+[One paragraph: what the product is, who it's for, and why it exists.]
+
+**Core principle:** [The one-sentence design philosophy that guides every decision.]
+
+## Current State
+
+[One paragraph: current milestone, what's done, what's next.]
+
+## Architecture
+
+### Stack
+- **Next.js 16** (App Router, Turbopack), **TypeScript 5** (strict)
+- **Tailwind CSS v4** (PostCSS)
+- **Supabase** (Postgres + Auth + Realtime + Edge Functions)
+- **Serwist** (PWA service worker)
+- **Capacitor** (native iOS/Android builds)
+
+### Environments
+Three environments: local (Docker), staging, production (`{{PRODUCTION_URL}}`).
+Migration flow: `npm run db:validate` → `db:promote:staging` → `FORCE=1 db:promote:production`.
+Full runbook: `docs/ops/environment-setup.md`.
+
+### Backend principles
+- **Anonymous-first auth** — `signInAnonymously()` on first load, upgrade later
+- **Server-controlled mutations** — browser clients do not directly write points, rewards, or progress; use Supabase RPC or Edge Functions
+- **Points ledger** — append-only, not a counter
+
+## Project Governance
+
+| System | Location | When to use |
+|--------|----------|-------------|
+| **PRDs** | `docs/product/` | Before significant product additions |
+| **ADRs** | `docs/decisions/` | Before architectural decisions |
+| **Risk Register** | `docs/security/risk-register.md` | When a risk is identified or closed |
+| **Remediation Backlog** | `docs/quality/remediation-backlog.md` | When a QA finding becomes a work item |
+
+## Developer Workflow
+
+Team coordination: `docs/contributing/developer-workflow.md` — read before opening your first branch.
+
+**Command logging:** A PostToolUse hook logs Bash commands to `.claude/command-log.txt`. Set verbosity by writing `commands`, `status`, or `full` to `.claude/log-level.txt`.
+
+**Dev journal:** Run `bash .claude/hooks/generate-journal-entry.sh` at the end of significant work sessions.
+
+## Institutional Knowledge
+
+Keep living documentation current as part of normal development.
+
+| Change | Update |
+|--------|--------|
+| New/modified table, enum, index, or RLS policy | `docs/database.md` |
+| New RPC function or mutation flow | `docs/database.md` — RPC Functions section |
+| Architectural decision | New ADR in `docs/decisions/` |
+| New feature | New PRD in `docs/product/` |
+| Migration pushed to remote | `docs/database.md` — header date + Migrations table |
+| Risk identified or closed | `docs/security/risk-register.md` |
+| QA issue found or resolved | `docs/quality/remediation-backlog.md` |
+| Document superseded | Move to `docs/archive/`, update archive README |
+| End of significant work session | Dev journal entry |
+
+**Principle:** If another developer would need to reverse-engineer something you just built, document it now.
+
+## The 30-Minute Rule
+
+If a decision takes more than 30 minutes, pick the simpler option and move on.
+```
+
+---
+
+## Step 10 — Final setup tasks
+
+After creating all files above:
+
+1. **Set executable permissions on scripts:**
+   ```bash
+   chmod +x scripts/db-promote.sh
+   chmod +x .claude/hooks/log-command.sh
+   chmod +x .claude/hooks/generate-journal-entry.sh
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   nvm install
+   npm install
+   ```
+
+3. **Initialize Supabase** (if using):
+   ```bash
+   npx supabase init   # if not already initialized
+   npx supabase start  # starts local Docker containers
+   ```
+
+4. **Create gitignored env files** (never commit these):
+   ```bash
+   cp .env.example .env.local
+   # Fill in credentials before `npm run dev`
+   ```
+
+5. **Link Supabase CLI to production** (if project exists):
+   ```bash
+   npx supabase link --project-ref {{SUPABASE_PROJECT_REF}}
+   ```
+
+6. **Configure GitHub branch protection** (GitHub UI → Settings → Branches):
+   - `main`: Require PR + 1 approval + `tsc`/`eslint` status checks + up-to-date branches + block direct push
+   - `preview`: Require PR + 1 approval + `tsc`/`eslint` status checks
+
+7. **Configure Vercel** (Vercel dashboard):
+   - Link repo, set production branch to `main`, production domain to `{{PRODUCTION_URL}}`
+   - Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` scoped to Production and Preview (with separate values per environment)
+
+8. **Verify the harness works:**
+   ```bash
+   npm run dev               # → app running at localhost:3000
+   npx tsc --noEmit          # → 0 errors
+   npm run lint              # → 0 errors/warnings
+   npm run db:validate       # → local migrations lint clean (if Supabase)
+   ```
+
+9. **Create the first ADR** documenting your primary platform/stack decisions using `docs/decisions/TEMPLATE.md`.
+
+10. **Generate initial journal entry:**
+    ```bash
+    bash .claude/hooks/generate-journal-entry.sh
+    ```
+
+---
+
+## Directory structure after setup
+
+```
+{{PROJECT_NAME}}/
+├── .claude/
+│   ├── hooks/
+│   │   ├── generate-journal-entry.sh
+│   │   └── log-command.sh
+│   ├── log-level.txt
+│   └── settings.local.json
+├── .github/
+│   ├── pull_request_template.md
+│   └── workflows/
+│       └── ci.yml
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── manifest.ts
+│   ├── offline/page.tsx
+│   ├── page.tsx
+│   └── sw.ts
+├── docs/
+│   ├── README.md
+│   ├── archive/README.md
+│   ├── contributing/developer-workflow.md
+│   ├── database.md
+│   ├── decisions/TEMPLATE.md
+│   ├── dev-journal.md
+│   ├── ops/environment-setup.md
+│   ├── product/TEMPLATE.md
+│   ├── quality/
+│   │   ├── remediation-backlog.md
+│   │   └── review-playbook.md
+│   └── security/risk-register.md
+├── scripts/
+│   └── db-promote.sh
+├── supabase/
+│   ├── config.toml
+│   ├── migrations/
+│   └── seed.sql
+├── utils/
+│   └── supabase/
+│       ├── client.ts
+│       ├── middleware.ts
+│       └── server.ts
+├── .env.example
+├── .env.staging.example
+├── .env.staging.local.example
+├── .gitignore
+├── .nvmrc
+├── CLAUDE.md
+├── capacitor.config.ts
+├── eslint.config.mjs
+├── middleware.ts
+├── next.config.ts
+├── package.json
+├── postcss.config.mjs
+└── tsconfig.json
+```

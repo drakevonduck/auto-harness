@@ -1,0 +1,2298 @@
+# Development Harness v2
+# AI-Assisted Software Delivery — Governance-First Operating Model
+# Extracted and redesigned from production use. Stack-agnostic.
+
+---
+
+## E. Priority Upgrade Summary (read this first)
+
+The v1 harness had good instincts but relied too heavily on people and agents behaving well voluntarily. Here is what changed and why it matters.
+
+| Problem in v1 | Fix in v2 |
+|---------------|-----------|
+| All doctrine in CLAUDE.md — Claude-specific and governance mixed | Separated into `operating-principles.md` (durable doctrine), `AGENTS.md` (cross-agent rules), `CLAUDE.md` (Claude-specific only) |
+| No trust boundaries for agent actions | Explicit five-tier trust model with stop conditions |
+| "Remember to update docs" as policy | Path-based CI enforcement: changed path = required companion update or CI fails |
+| Security section was a checklist | Full security posture: secret handling, scanning, client/server boundaries, incident classification |
+| Migrations treated like code diffs | Migrations as first-class operational events with authoring standards, rollback policy, and post-apply verification |
+| Dev journal implied as canonical | Explicitly reframed as narrative artifact; canonical records defined separately |
+| No ops artifacts | Added release checklist, rollback checklist, incident template, postmortem template, runbook index |
+| No enforcement plan | Concrete CI checks, CODEOWNERS, required review gates, protected branch spec |
+| Command allowlist was flat | Replaced with tiered trust model aligned to real-world impact |
+
+---
+
+## B. Repository Layout
+
+```
+project-root/
+│
+├── AGENTS.md                          # Cross-agent operating rules (all AI tools)
+├── CLAUDE.md                          # Claude Code-specific instructions only
+├── CHANGELOG.md                       # Release notes, version history
+├── CODEOWNERS                         # GitHub ownership for review enforcement
+│
+├── .claude/
+│   ├── settings.local.json            # Committed: hook wiring, project permissions
+│   ├── settings.json                  # Gitignored: personal/local overrides
+│   ├── log-level.txt                  # Gitignored: commands | status | full
+│   ├── command-log.txt                # Gitignored: agent command history
+│   └── hooks/
+│       ├── log-command.sh             # PostToolUse: logs all bash commands
+│       └── generate-journal-entry.sh  # Derives narrative entries from git history
+│
+├── .env.example                       # Committed: template with all keys, no values
+├── .env.staging.example               # Committed: staging template (if applicable)
+├── .gitignore
+├── .nvmrc                             # Node version pin (JS projects)
+│
+├── .github/
+│   ├── CODEOWNERS
+│   ├── pull_request_template.md
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug.md
+│   │   ├── feature.md
+│   │   └── incident.md
+│   └── workflows/
+│       ├── ci.yml                     # Type check + lint on every PR
+│       ├── security.yml               # Dep audit + secret scan on every PR
+│       └── docs-enforcement.yml       # Path-based doc companion checks
+│
+├── scripts/
+│   ├── db-promote.sh                  # local → staging → production migration gate
+│   └── check-docs.sh                  # Companion doc check (called by CI)
+│
+└── docs/
+    ├── README.md                      # Doc directory index
+    ├── operating-principles.md        # Durable engineering doctrine (not agent-specific)
+    ├── dev-journal.md                 # Narrative artifact (not canonical)
+    │
+    ├── architecture/
+    │   ├── overview.md                # System diagram, component map
+    │   └── data-model.md              # Schema, access control, RPC reference
+    │
+    ├── contributing/
+    │   ├── developer-workflow.md      # Branching, PR, migration SOP
+    │   └── getting-started.md        # First-day setup guide
+    │
+    ├── decisions/
+    │   ├── TEMPLATE.md
+    │   └── 0001-[first-decision].md
+    │
+    ├── product/
+    │   ├── TEMPLATE.md
+    │   └── PRD-001-[first-feature].md
+    │
+    ├── ops/
+    │   ├── environment-setup.md       # Environment inventory + setup runbook
+    │   ├── runbook-index.md           # Master index of all runbooks
+    │   ├── release-checklist.md       # Pre/post release gates
+    │   ├── rollback-checklist.md      # Rollback decision tree + steps
+    │   ├── incident-template.md       # Live incident structure
+    │   └── postmortem-template.md     # Post-incident review
+    │
+    ├── quality/
+    │   ├── review-playbook.md         # When and how to run formal reviews
+    │   └── remediation-backlog.md     # Open QA/risk work items
+    │
+    └── security/
+        ├── risk-register.md           # Architecture + security risks
+        └── security-policy.md         # Secret handling, scanning, data boundaries
+```
+
+---
+
+## A. Full Revised Harness
+
+---
+
+### Bootstrap Interview
+
+Before creating any files, collect answers to these questions. Ask groups one at a time and wait for all answers before proceeding.
+
+**Group 1 — Identity**
+1. Project slug (package/repo name, kebab-case)
+2. Project title (human-readable)
+3. One-sentence description — what is it and who is it for?
+4. Production URL (or "TBD")
+5. Core design principle — the one non-negotiable (e.g. "Correctness over speed" or "User trust is the product")
+
+**Group 2 — Stack**
+6. Frontend framework (Next.js, Remix, SvelteKit, plain React, none, other)
+7. Language (TypeScript, JavaScript, Python, Go, other)
+8. CSS approach (Tailwind, CSS Modules, styled-components, none, other)
+9. Backend / database (Supabase, Prisma+Postgres, PlanetScale, Firebase, none, other)
+10. Auth approach (Supabase Auth, Clerk, Auth.js, custom, none)
+11. Deployment target (Vercel, Fly.io, Railway, AWS, GCP, other)
+12. Native mobile (Capacitor, React Native, Expo, none)
+13. PWA / service worker (yes / no)
+14. Package manager (npm, pnpm, yarn, bun)
+
+**Group 3 — Governance context**
+15. Team size (how many humans will commit to this repo)
+16. AI agent usage (Claude Code, Cursor, Copilot, other, none — list all)
+17. Database with versioned migrations (yes / no)
+18. Staging environment exists or planned (yes / no)
+19. Any compliance requirements (SOC2, HIPAA, GDPR, none, other)
+
+Once all answers are collected, generate every file below. Omit files for features marked "none" or "no", but always include all governance files regardless of stack.
+
+---
+
+### FILE: `docs/operating-principles.md`
+
+This file contains durable engineering doctrine. It is not agent-specific. It does not change when tools change. It is the ground truth for how this project is built and maintained.
+
+```markdown
+# Operating Principles — [PROJECT_TITLE]
+
+These principles define how this project is built and maintained. They are not aspirational.
+They are the operating model that the team — human and AI — executes against.
+
+---
+
+## 1. Structure before improvisation
+
+Every significant feature, architectural change, or operational event requires a governing artifact
+before implementation begins. Code is not the primary record. The primary records are:
+
+| Artifact | Canonical source | When required |
+|----------|-----------------|---------------|
+| Architecture Decision Record (ADR) | `docs/decisions/` | Before architectural or platform decisions |
+| Product Requirements Doc (PRD) | `docs/product/` | Before significant new features |
+| Migration record | `docs/architecture/data-model.md` | When any schema changes are applied |
+| Risk entry | `docs/security/risk-register.md` | When a risk is identified |
+| Remediation item | `docs/quality/remediation-backlog.md` | When a review finding needs tracking |
+| Release notes | `CHANGELOG.md` | Before or with every tagged release |
+| Incident record | `docs/ops/incident-template.md` | During any production incident |
+
+The dev journal (`docs/dev-journal.md`) is a narrative convenience, not a canonical record.
+Do not treat it as authoritative. Canonical truth lives in the sources above and in git history.
+
+---
+
+## 2. Documentation is part of the diff
+
+Documentation updates belong in the PR that makes the change. Not in a follow-up commit.
+Not "soon." In the PR.
+
+A PR that changes the schema without updating `docs/architecture/data-model.md` is incomplete.
+A PR that makes an architectural decision without an ADR is incomplete.
+CI will enforce this on sensitive paths.
+
+---
+
+## 3. The server controls trust
+
+The application server and database control what is authoritative. Clients display and collect.
+Clients do not enforce business rules. Clients do not mint points, rewards, state transitions,
+or access grants. Every mutation that has business value goes through a server-controlled path
+with explicit validation.
+
+---
+
+## 4. Three-environment discipline
+
+Code and schema changes flow through three environments in order: local → staging → production.
+There are no exceptions for urgent changes. An "urgent" change that skips staging is the highest-risk
+change in the system.
+
+| Environment | Purpose | Who can mutate |
+|-------------|---------|----------------|
+| Local | Development and local validation | Any developer |
+| Staging | Integration QA and pre-production validation | CI-gated, developer-initiated |
+| Production | Live system | Human-approved, explicit FORCE flag required |
+
+---
+
+## 5. Migrations are operational events
+
+A database migration is not a code change. It is an operational event with real risk.
+
+Migrations require:
+- Local validation before any PR
+- Announced ownership (one developer, no concurrent migrations)
+- Staging promotion before production
+- Post-apply verification
+- An entry in `docs/architecture/data-model.md`
+
+Schema changes that affect access control, PII, or payment data require explicit security review.
+
+---
+
+## 6. Secrets stay out of code and logs
+
+Secrets are never committed, never logged, never echoed in CI output, never returned to clients.
+`.env.example` is the committed template. Actual values live in gitignored env files or a secrets manager.
+
+The client/server boundary for secrets is absolute:
+- `NEXT_PUBLIC_*` variables (or equivalent framework prefixes) are visible to end users. Never put secrets there.
+- Service credentials, admin keys, database passwords, and API secrets belong in server-only env vars.
+
+---
+
+## 7. AI agents increase the need for discipline, not the license to skip it
+
+AI agents can produce correct-looking code faster than humans can review it. This is a risk, not a feature.
+The faster code is produced, the more important it is that:
+
+- Every change is traceable to a governing artifact
+- Sensitive paths require human review regardless of who wrote the code
+- Agents do not autonomously perform actions with production impact
+- Agents stop and defer when context is ambiguous or scope is unclear
+
+The harness is designed to support AI-assisted delivery, not to trust AI output unconditionally.
+
+---
+
+## 8. The 30-minute rule
+
+If a technical decision takes more than 30 minutes to resolve, pick the simpler option and move on.
+Document the decision and its rationale in a short ADR or inline comment. This is not cutting corners —
+it is respecting that indecision has a cost and reversible decisions can be revisited.
+
+---
+
+## 9. Reversibility preference
+
+Prefer reversible decisions over irreversible ones. When the reversible and irreversible options have
+similar value, choose reversible. When an irreversible action is required (production data deletion,
+key rotation, breaking API change), it requires explicit human review and a rollback plan.
+
+---
+
+## 10. Ownership is declared, not assumed
+
+Every sensitive area of the codebase has a declared owner in `CODEOWNERS`. Ownership means:
+- You review PRs that touch your area
+- You are the escalation point for incidents involving your area
+- You maintain the runbooks for your area
+
+See `docs/ops/ownership-map.md` for the current ownership table.
+```
+
+---
+
+### FILE: `AGENTS.md`
+
+This file is for all AI agents. It defines how any AI tool should interact with this repository.
+CLAUDE.md contains Claude Code-specific instructions that go beyond what is here.
+
+```markdown
+# AGENTS.md — AI Agent Operating Rules
+
+This file applies to all AI agents working in this repository:
+Claude Code, GitHub Copilot, Cursor, and any other AI-assisted tool.
+
+If you are an AI agent, read this file before taking any action.
+
+---
+
+## What this repository is
+
+[PROJECT_TITLE] — [ONE_SENTENCE_DESCRIPTION]
+
+Core principle: [CORE_DESIGN_PRINCIPLE]
+
+Production URL: [PRODUCTION_URL]
+
+---
+
+## Orientation order
+
+When starting a session in this repository, read in this order:
+
+1. `AGENTS.md` (this file)
+2. `docs/operating-principles.md` — engineering doctrine
+3. `docs/contributing/developer-workflow.md` — branching and PR rules
+4. `docs/architecture/overview.md` — system map
+5. `CLAUDE.md` or equivalent tool-specific file (if it exists for your tool)
+6. Any PRD, ADR, or ticket referenced in the current task
+
+Do not start modifying files until you have read at least items 1–3.
+
+---
+
+## Trust tier model
+
+Every action an agent can take falls into one of five tiers.
+The higher the tier, the more real-world impact it has.
+The higher the tier, the less autonomy the agent gets.
+
+| Tier | Category | Examples | Default posture |
+|------|----------|----------|----------------|
+| 0 | Read-only inspection | Read files, grep, git log, git diff, git status, list dirs | Always permitted |
+| 1 | Local analysis | Run tests, type check, lint, build, validate locally | Always permitted |
+| 2 | Workspace mutation | Edit files, create files, delete non-critical files | Permitted within approved task scope |
+| 3 | Git-writing | git add, git commit, create branches | Permitted; human confirms before push |
+| 4 | Environment-altering | Install packages, run migrations locally, reset local DB | Requires explicit instruction for each action |
+| 5 | Remote or production-affecting | git push, deploy, db:promote:staging or :production, secrets access, infra changes | Never autonomous; always requires human confirmation |
+
+**Hard stops — never do these without explicit human instruction:**
+- Push to `main` or `preview`
+- Run `db:promote:production` or equivalent
+- Trigger a deployment
+- Access, read, or log credential values
+- Delete files outside the current task scope
+- Modify `.github/workflows/`, `CODEOWNERS`, `docs/security/`, or `scripts/` without explicit instruction
+- Modify package lockfiles by hand (only package manager commands)
+- Generate or commit migration files without explicit instruction
+
+---
+
+## What to read before modifying specific areas
+
+| Area you are touching | Read before modifying |
+|----------------------|----------------------|
+| Database schema / migrations | `docs/architecture/data-model.md`, `docs/contributing/developer-workflow.md § migrations` |
+| Auth, session, or permissions logic | `docs/security/security-policy.md`, linked ADR |
+| Environment variables or `.env.*` | `docs/security/security-policy.md § secrets` |
+| Deployment config | `docs/ops/environment-setup.md` |
+| CI/CD workflows | `docs/ops/environment-setup.md`, current ADRs |
+| API endpoints or RPCs | `docs/architecture/data-model.md § API` |
+| `CODEOWNERS` | `docs/ops/ownership-map.md` |
+
+---
+
+## What to update when making changes
+
+| Change made | Required update |
+|-------------|----------------|
+| New or modified table, column, index, or constraint | `docs/architecture/data-model.md` |
+| New or modified RPC, API endpoint, or server mutation | `docs/architecture/data-model.md § API` |
+| New or modified access control rule | `docs/architecture/data-model.md § Access Control` |
+| Architectural or platform decision | New ADR in `docs/decisions/` |
+| New feature or product change | New PRD in `docs/product/` (or reference existing) |
+| Risk identified | `docs/security/risk-register.md` |
+| QA finding | `docs/quality/remediation-backlog.md` |
+| Schema migration applied to any environment | `docs/architecture/data-model.md § Migrations applied` |
+| Release or version tag | `CHANGELOG.md` |
+
+If you make a change that requires a companion doc update and the doc is not updated in the same session, leave a clearly marked `TODO(agent): update [doc] for this change` comment in the affected code and flag it in your response summary.
+
+---
+
+## Stop conditions — defer to a human when
+
+- The task scope is ambiguous and clarification would change the approach
+- You are about to perform a Tier 5 action
+- You cannot find a governing artifact (PRD, ADR, or issue) for a significant change
+- A file you need to read is missing or inconsistent with other documentation
+- The current code state does not match what any doc says it should be
+- You are about to delete, rename, or restructure more than 3 files
+- You are generating migration files
+- You encounter conflicting instructions between files
+- You are unsure whether a change is within the approved scope
+
+When stopping: state clearly what you found, what you were about to do, and what information you need to proceed.
+
+---
+
+## Scope discipline
+
+Do not expand scope. Do not "improve" adjacent code while fixing a bug.
+Do not add error handling, logging, or validation beyond what the task explicitly requires.
+Do not refactor naming, formatting, or structure in files you are not directly changing.
+Do not add dependencies without explicit instruction.
+
+A task is complete when the specific requested change is made and its companion docs are updated.
+It is not complete when the surrounding code is also "cleaner."
+
+---
+
+## Uncertainty handling
+
+When in doubt about intent, ask. One clarifying question is cheaper than one wrong implementation.
+
+When in doubt about safety, stop. A stopped agent is recoverable. A destructive action may not be.
+```
+
+---
+
+### FILE: `CLAUDE.md`
+
+This file is Claude Code-specific. It extends AGENTS.md with instructions specific to how Claude Code
+operates in this repository. Read AGENTS.md first.
+
+```markdown
+# CLAUDE.md — Claude Code Instructions
+
+Read `AGENTS.md` before this file. Everything in AGENTS.md applies here.
+This file contains Claude Code-specific configuration, context, and extensions.
+
+---
+
+## Project context
+
+[PROJECT_TITLE]: [ONE_SENTENCE_DESCRIPTION]
+
+Core principle: [CORE_DESIGN_PRINCIPLE]
+
+Current milestone: [CURRENT_STATE — update this at the end of every significant session]
+
+Stack:
+- [FRAMEWORK + VERSION]
+- [LANGUAGE]
+- [CSS APPROACH]
+- [BACKEND / DATABASE]
+- [AUTH]
+- [DEPLOYMENT]
+
+---
+
+## Reading order for Claude Code sessions
+
+1. `AGENTS.md` — trust tiers, stop conditions, required updates
+2. `docs/operating-principles.md` — engineering doctrine
+3. This file (CLAUDE.md) — Claude-specific context
+4. `docs/contributing/developer-workflow.md` — branching and PR rules
+5. `docs/architecture/overview.md` — system map
+6. The specific PRD, ADR, or task description for the current work
+
+---
+
+## Command logging
+
+A PostToolUse hook logs all Bash commands to `.claude/command-log.txt`.
+Log verbosity is controlled by `.claude/log-level.txt`:
+- `commands` — log command only
+- `status` — command + exit code (default)
+- `full` — command + exit code + first 50 lines of output
+
+The log file is gitignored. It is for developer visibility during AI-assisted sessions.
+
+---
+
+## Dev journal
+
+`docs/dev-journal.md` is a narrative convenience artifact.
+Run `bash .claude/hooks/generate-journal-entry.sh` to append a git-derived entry.
+It is not a canonical record. Do not treat it as authoritative.
+Canonical records are ADRs, PRDs, the risk register, and git history.
+
+---
+
+## What Claude Code may do autonomously (within task scope)
+
+- Read any file in the repo
+- Run type checks, linters, tests, local build commands
+- Edit files within the scope of the current task
+- Create new files within the scope of the current task
+- Run `git add` and `git commit` (but not `git push`)
+- Run `git status`, `git diff`, `git log`
+- Run local database reset commands when explicitly instructed
+- Generate migration files when explicitly instructed
+
+---
+
+## What Claude Code must not do without explicit human confirmation
+
+- `git push` to any branch
+- `db:promote:staging` or `db:promote:production`
+- Any deployment trigger
+- Any action that reads, displays, or logs credential values
+- Modify `.github/workflows/`, `CODEOWNERS`, or `scripts/db-promote.sh`
+- Delete files outside the stated task scope
+- Modify `docs/security/` without being explicitly asked
+- Install or upgrade dependencies
+- Generate migration files without explicit instruction per migration
+
+---
+
+## Architecture quick reference
+
+[Fill in as the project grows — short bullets linking to the right docs]
+
+- Auth flow: [link to ADR or architecture doc]
+- Data access boundary: [link to ADR-0005 or equivalent]
+- Environment model: `docs/ops/environment-setup.md`
+- Migration workflow: `docs/contributing/developer-workflow.md § migrations`
+- Schema reference: `docs/architecture/data-model.md`
+
+---
+
+## Known sharp edges
+
+[Document gotchas, non-obvious constraints, and things that have caused problems before.
+Update this as you discover new ones.]
+
+- [Example: "The staging Supabase project does not have anonymous sign-ins enabled — do not test auth flow on staging without checking this first."]
+```
+
+---
+
+### FILE: `.claude/settings.local.json`
+
+Committed. Defines hook wiring and project-level command permissions.
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash([PACKAGE_MANAGER] run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/log-command.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Add stack-specific entries as needed:
+- TypeScript: `"Bash(npx tsc:*)"`
+- Supabase: `"Bash(npx supabase db:*)"`
+- Prisma: `"Bash(npx prisma:*)"`
+
+Never add `git push`, deployment commands, or production migration commands to the allow list.
+
+---
+
+### FILE: `.claude/hooks/log-command.sh`
+
+```bash
+#!/usr/bin/env bash
+# PostToolUse hook — logs Bash commands with configurable verbosity.
+# Requires: jq
+
+set -euo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+LOG_FILE="$PROJECT_DIR/.claude/command-log.txt"
+LEVEL_FILE="$PROJECT_DIR/.claude/log-level.txt"
+
+LEVEL="status"
+if [[ -f "$LEVEL_FILE" ]]; then
+  LEVEL="$(cat "$LEVEL_FILE" | tr -d '[:space:]')"
+fi
+
+EVENT="$(cat)"
+TIMESTAMP="$(date '+%Y-%m-%d %H:%M:%S')"
+COMMAND="$(echo "$EVENT" | jq -r '.tool_input.command // "unknown"')"
+
+case "$LEVEL" in
+  commands)
+    echo "[$TIMESTAMP] $ $COMMAND" >> "$LOG_FILE"
+    ;;
+  status)
+    EXIT_CODE="$(echo "$EVENT" | jq -r '.tool_result.exit_code // "?"')"
+    echo "[$TIMESTAMP] $ $COMMAND  [exit: $EXIT_CODE]" >> "$LOG_FILE"
+    ;;
+  full)
+    EXIT_CODE="$(echo "$EVENT" | jq -r '.tool_result.exit_code // "?"')"
+    OUTPUT="$(echo "$EVENT" | jq -r '.tool_result.stdout // ""' | head -50)"
+    echo "[$TIMESTAMP] $ $COMMAND  [exit: $EXIT_CODE]" >> "$LOG_FILE"
+    if [[ -n "$OUTPUT" ]]; then
+      echo "$OUTPUT" | sed 's/^/  > /' >> "$LOG_FILE"
+    fi
+    echo "" >> "$LOG_FILE"
+    ;;
+  *)
+    echo "[$TIMESTAMP] $ $COMMAND" >> "$LOG_FILE"
+    ;;
+esac
+```
+
+---
+
+### FILE: `.claude/hooks/generate-journal-entry.sh`
+
+Derives a narrative session summary from git history. This is a convenience tool, not a canonical record.
+
+```bash
+#!/usr/bin/env bash
+# Derives a narrative dev journal entry from git history.
+# Output is appended to docs/dev-journal.md (narrative artifact, not canonical).
+# Canonical records: ADRs, PRDs, risk register, git log, PR history.
+#
+# Usage: bash .claude/hooks/generate-journal-entry.sh [since-date]
+
+set -euo pipefail
+
+JOURNAL_FILE="docs/dev-journal.md"
+TODAY=$(date +%Y-%m-%d)
+
+if [[ -n "${1:-}" ]]; then
+  SINCE="$1"
+else
+  LAST_DATE=$(grep -oE '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' "$JOURNAL_FILE" 2>/dev/null \
+    | tail -1 | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' || true)
+  if [[ -n "$LAST_DATE" ]]; then
+    SINCE="$LAST_DATE"
+  else
+    SINCE=$(date -v-7d +%Y-%m-%d 2>/dev/null || date -d "7 days ago" +%Y-%m-%d)
+  fi
+fi
+
+COMMITS=$(git log --oneline --since="$SINCE" --format="- %s" 2>/dev/null \
+  || echo "- (no commits found)")
+
+DIFF_STAT=$(git diff --stat \
+  "$(git log --since="$SINCE" --format="%H" --reverse 2>/dev/null | head -1)^..HEAD" \
+  2>/dev/null | tail -1 || echo "(unable to compute)")
+
+DECISIONS=""
+ADR_FILES=$(git diff --name-only --since="$SINCE" -- "docs/decisions/" 2>/dev/null \
+  | grep -v TEMPLATE || true)
+if [[ -n "$ADR_FILES" ]]; then
+  while IFS= read -r adr; do
+    TITLE=$(head -1 "$adr" 2>/dev/null | sed 's/^# //')
+    DECISIONS="${DECISIONS}\n- ${TITLE}"
+  done <<< "$ADR_FILES"
+fi
+
+ISSUES=$(git log --oneline --since="$SINCE" --format="%s" 2>/dev/null \
+  | grep -iE '(fix|bug|issue|error|broken|crash)' | sed 's/^/- /' || true)
+
+ENTRY="## ${TODAY} — Session
+
+> **Note:** This is a narrative summary derived from git history. It is not a canonical record.
+> Canonical sources: ADRs in \`docs/decisions/\`, PRDs in \`docs/product/\`, risk register, and git log.
+
+**Commits since ${SINCE}:**
+${COMMITS}
+
+**Files changed:** ${DIFF_STAT}"
+
+if [[ -n "$DECISIONS" ]]; then
+  ENTRY="${ENTRY}
+
+**Decisions recorded:**$(echo -e "$DECISIONS")"
+fi
+
+if [[ -n "$ISSUES" ]]; then
+  ENTRY="${ENTRY}
+
+**Fixes / Issues:**
+${ISSUES}"
+fi
+
+ENTRY="${ENTRY}
+
+**Free-form notes:**
+_[Add observations, unresolved questions, or next-session context here]_
+
+---
+"
+
+if [[ ! -f "$JOURNAL_FILE" ]]; then
+  cat > "$JOURNAL_FILE" << 'HEADER'
+# Development Journal
+
+Narrative summaries derived from git history. For convenience and continuity, not for audit.
+
+Canonical records live in: `docs/decisions/` (ADRs), `docs/product/` (PRDs),
+`docs/security/risk-register.md`, and git history.
+
+---
+HEADER
+fi
+
+echo "" >> "$JOURNAL_FILE"
+echo -e "$ENTRY" >> "$JOURNAL_FILE"
+echo "Journal entry appended to ${JOURNAL_FILE} (since ${SINCE})"
+```
+
+---
+
+### FILE: `.github/pull_request_template.md`
+
+```markdown
+## What & Why
+
+<!-- One paragraph: what changed and why. Be specific. Explain the problem this solves. -->
+
+**Governing artifact:** <!-- [PRD-NNN](docs/product/...) / [ADR-NNNN](docs/decisions/...) / [Issue #NNN] -->
+
+---
+
+## Preview / Staging URL
+
+<!-- Required: paste the preview deployment link. Reviewer must visit it before approving. -->
+<!-- If there is no preview URL, explain why. -->
+
+---
+
+## Checklist
+
+### Code quality
+- [ ] Type check passes (0 errors)
+- [ ] Lint passes (0 errors, 0 warnings)
+- [ ] No secrets, credentials, or PII in the diff
+- [ ] No console.log / debug output left in
+
+### Scope discipline
+- [ ] This PR does only what the governing artifact describes
+- [ ] No unrequested refactoring, dependency additions, or feature additions
+
+### Documentation — complete all that apply, or check N/A
+- [ ] `docs/architecture/data-model.md` updated — any schema, API, or access control change
+- [ ] ADR created or linked — any architectural or platform decision
+- [ ] PRD created or linked — any significant new feature
+- [ ] `docs/security/risk-register.md` updated — any new or closed risk
+- [ ] `docs/quality/remediation-backlog.md` updated — any new or closed QA item
+- [ ] `CHANGELOG.md` updated — if this is release-worthy
+- [ ] **N/A** — no documentation changes required _(briefly explain: ________________________)_
+
+### Database / schema migrations — complete if this PR includes migrations
+- [ ] `npm run db:validate` (or equivalent) passed locally before opening this PR
+- [ ] Migration ownership was announced to the team before starting
+- [ ] Migration follows the naming and forward-only conventions in `docs/architecture/data-model.md`
+- [ ] `db:promote:staging` is deferred until this PR merges to `preview`
+- [ ] Post-apply verification steps are documented in the migration notes or PR description
+
+### Security-sensitive changes — complete if this PR touches auth, permissions, secrets, or PII
+- [ ] `docs/security/security-policy.md` reviewed
+- [ ] Security review checklist in `docs/quality/review-playbook.md` completed
+- [ ] No new secrets added to committed files
+- [ ] No new `NEXT_PUBLIC_*` (or equivalent) variables carrying sensitive data
+
+### Review gate
+- [ ] Reviewer has visited the preview/staging URL
+- [ ] PR targets `preview` branch (not `main` directly) — or this is an explicitly approved `preview → main` promotion
+```
+
+---
+
+### FILE: `.github/workflows/ci.yml`
+
+Adapt the type-check and lint commands to the actual stack. The structure is required.
+
+```yaml
+name: CI
+
+on:
+  pull_request:
+    branches: [main, preview]
+
+jobs:
+  checks:
+    name: Type check & lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: '[PACKAGE_MANAGER]'
+
+      - name: Install dependencies
+        run: [PACKAGE_MANAGER] ci
+
+      - name: Type check
+        run: [TYPE_CHECK_COMMAND]   # e.g. npx tsc --noEmit
+
+      - name: Lint
+        run: [LINT_COMMAND]         # e.g. npm run lint
+```
+
+---
+
+### FILE: `.github/workflows/security.yml`
+
+```yaml
+name: Security
+
+on:
+  pull_request:
+    branches: [main, preview]
+  schedule:
+    - cron: '0 8 * * 1'   # Weekly Monday scan
+
+jobs:
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Audit dependencies
+        # npm: npm audit --audit-level=high
+        # pnpm: pnpm audit --audit-level=high
+        # yarn: yarn npm audit --environment production
+        run: [AUDIT_COMMAND]
+
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Full history for accurate scanning
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+```
+
+---
+
+### FILE: `.github/workflows/docs-enforcement.yml`
+
+Path-based documentation companion enforcement. CI fails if sensitive paths change without
+the required companion document being touched in the same PR.
+
+```yaml
+name: Docs enforcement
+
+on:
+  pull_request:
+    branches: [main, preview]
+
+jobs:
+  companion-docs:
+    name: Check companion documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check schema/migration companion
+        run: bash scripts/check-docs.sh migrations
+
+      - name: Check security companion
+        run: bash scripts/check-docs.sh security
+
+      - name: Check dependency companion
+        run: bash scripts/check-docs.sh dependencies
+```
+
+---
+
+### FILE: `scripts/check-docs.sh`
+
+```bash
+#!/usr/bin/env bash
+# Companion documentation enforcement.
+# Called by docs-enforcement.yml CI workflow.
+# Fails if a sensitive path changed without the required companion doc being updated.
+
+set -euo pipefail
+
+RULE="${1:-}"
+BASE_BRANCH="${GITHUB_BASE_REF:-main}"
+
+changed() {
+  git diff --name-only "origin/${BASE_BRANCH}...HEAD" | grep -qE "$1"
+}
+
+changed_doc() {
+  git diff --name-only "origin/${BASE_BRANCH}...HEAD" | grep -qE "$1"
+}
+
+case "$RULE" in
+  migrations)
+    # If migration files changed, data-model.md must also be touched
+    if changed 'migrations/' || changed 'supabase/migrations/'; then
+      if ! changed_doc 'docs/architecture/data-model\.md'; then
+        echo ""
+        echo "FAIL: Migration files were changed but docs/architecture/data-model.md was not updated."
+        echo ""
+        echo "Migration changes require:"
+        echo "  1. An entry in docs/architecture/data-model.md § Migrations applied"
+        echo "  2. Updated schema or API documentation if the migration changed the public surface"
+        echo ""
+        echo "Update docs/architecture/data-model.md in this PR before merging."
+        exit 1
+      fi
+    fi
+    ;;
+
+  security)
+    # If auth, permissions, or session paths changed, security policy or risk register must be touched
+    # Adjust paths to match your actual codebase structure
+    if changed 'src/auth/|src/permissions/|src/session/|utils/supabase/|middleware\.(ts|js)$'; then
+      if ! changed_doc 'docs/security/|docs/quality/review-playbook\.md'; then
+        echo ""
+        echo "FAIL: Security-sensitive paths changed without a security doc update."
+        echo ""
+        echo "Changes to auth, permissions, session, or middleware require one of:"
+        echo "  1. An updated entry in docs/security/risk-register.md"
+        echo "  2. A completed security checklist noted in the PR description"
+        echo "  3. A reference to an existing ADR that covers this change"
+        echo ""
+        echo "Update docs/security/ or acknowledge in the PR. See docs/quality/review-playbook.md."
+        exit 1
+      fi
+    fi
+    ;;
+
+  dependencies)
+    # If package manifest changed, lockfile must also change (no manual lockfile edits)
+    if changed 'package\.json$|pyproject\.toml$|go\.mod$|Cargo\.toml$'; then
+      if ! changed_doc 'package-lock\.json$|pnpm-lock\.yaml$|yarn\.lock$|poetry\.lock$|go\.sum$|Cargo\.lock$'; then
+        echo ""
+        echo "FAIL: Dependency manifest changed without a corresponding lockfile update."
+        echo ""
+        echo "Run the package manager install command to regenerate the lockfile."
+        exit 1
+      fi
+    fi
+    ;;
+
+  *)
+    echo "Unknown rule: $RULE"
+    echo "Available rules: migrations, security, dependencies"
+    exit 1
+    ;;
+esac
+
+echo "OK: $RULE check passed"
+```
+
+Make executable: `chmod +x scripts/check-docs.sh`
+
+---
+
+### FILE: `CODEOWNERS`
+
+Adapt paths to the actual project structure. This file makes the enforcement real —
+high-risk areas require a specific reviewer, not just any team member.
+
+```
+# CODEOWNERS — Required reviewers for sensitive paths
+# Format: path  @owner-or-team
+# Last updated: [DATE]
+
+# Default: all PRs require a review from the project lead
+*                               @[project-lead-github-handle]
+
+# Database schema and migrations
+migrations/                     @[db-owner]
+supabase/migrations/            @[db-owner]
+docs/architecture/data-model.md @[db-owner]
+
+# Auth, session, and permissions logic — require security-aware reviewer
+src/auth/                       @[security-reviewer]
+src/permissions/                @[security-reviewer]
+utils/supabase/                 @[security-reviewer]
+middleware.*                    @[security-reviewer]
+
+# Security documentation
+docs/security/                  @[security-reviewer]
+
+# CI/CD and deployment infrastructure
+.github/                        @[devops-owner]
+scripts/                        @[devops-owner]
+**/Dockerfile                   @[devops-owner]
+**/docker-compose*              @[devops-owner]
+vercel.json                     @[devops-owner]
+fly.toml                        @[devops-owner]
+
+# Environment templates — no real values, but structure changes need review
+.env.example                    @[project-lead-github-handle]
+.env.*.example                  @[project-lead-github-handle]
+
+# Governance documents — changes require lead review
+docs/operating-principles.md    @[project-lead-github-handle]
+AGENTS.md                       @[project-lead-github-handle]
+CLAUDE.md                       @[project-lead-github-handle]
+```
+
+---
+
+### FILE: `scripts/db-promote.sh`
+
+```bash
+#!/usr/bin/env bash
+# Three-environment migration promotion: local → staging → production
+#
+# Usage:
+#   ./scripts/db-promote.sh validate              Validate locally (no remote changes)
+#   ./scripts/db-promote.sh staging               Validate + push to staging
+#   ./scripts/db-promote.sh production            Dry-run against production (safe)
+#   FORCE=1 ./scripts/db-promote.sh production    Apply to production
+#
+# Toolchain substitution table:
+#   Supabase CLI:   reset=`npx supabase db reset`        push=`npx supabase db push`
+#   Prisma:         reset=`npx prisma migrate reset`      push=`npx prisma migrate deploy`
+#   Drizzle:        reset=`npx drizzle-kit push`          push=`npx drizzle-kit migrate`
+#   Flyway:         reset=`flyway clean && flyway migrate` push=`flyway migrate`
+#
+# The FORCE=1 gate and three-stage flow are REQUIRED regardless of toolchain.
+
+set -euo pipefail
+
+COMMAND="${1:-help}"
+
+# Load staging credentials
+if [ -f ".env.staging" ]; then
+  set -a
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "${line// }" ]] && continue
+    export "$line"
+  done < .env.staging
+  set +a
+fi
+
+step() { echo ""; echo "=== $* ==="; }
+ok()   { echo ""; echo "✓ $*"; }
+fail() { echo ""; echo "✗ $*" >&2; exit 1; }
+
+cmd_validate() {
+  step "1/2: Reset and migrate local database"
+  [[ REPLACE: local reset + migrate command ]]
+
+  step "2/2: Validate schema"
+  [[ REPLACE: schema lint/validate command, or remove if not applicable ]]
+
+  ok "Local validation passed"
+}
+
+cmd_staging() {
+  if [ -z "${STAGING_DB_URL:-}" ]; then
+    fail "STAGING_DB_URL not set. Copy .env.staging.example → .env.staging."
+  fi
+
+  step "1/3: Validate locally"
+  cmd_validate
+
+  step "2/3: Dry-run against staging"
+  [[ REPLACE: toolchain dry-run command against $STAGING_DB_URL ]]
+
+  step "3/3: Apply to staging"
+  [[ REPLACE: toolchain apply command against $STAGING_DB_URL ]]
+
+  ok "Staging promotion complete"
+  echo ""
+  echo "Next steps:"
+  echo "  1. Verify schema in staging DB console"
+  echo "  2. Run smoke tests against staging"
+  echo "  3. Do not promote to production until staging QA passes"
+}
+
+cmd_production() {
+  if [ "${FORCE:-}" != "1" ]; then
+    echo ""
+    echo "DRY-RUN ONLY. No changes will be applied to production."
+    echo ""
+    [[ REPLACE: toolchain dry-run command ]]
+    echo ""
+    echo "─────────────────────────────────────────────────────────────"
+    echo "To apply: FORCE=1 ./scripts/db-promote.sh production"
+    echo ""
+    echo "Before running with FORCE=1:"
+    echo "  1. Staging promotion must be complete and verified"
+    echo "  2. A second human must have reviewed the migration"
+    echo "  3. A DB snapshot/backup should exist if this is a destructive migration"
+    echo "─────────────────────────────────────────────────────────────"
+    exit 0
+  fi
+
+  step "1/3: Final dry-run"
+  [[ REPLACE: toolchain dry-run command ]]
+
+  step "2/3: Applying to production"
+  [[ REPLACE: toolchain apply command ]]
+
+  step "3/3: Post-apply verification"
+  echo "  Verify the following manually before this operation is complete:"
+  echo "  - Check expected tables/columns exist in production DB console"
+  echo "  - Run any post-migration smoke tests"
+  echo "  - Confirm application is responding correctly"
+
+  ok "Production promotion complete"
+  echo ""
+  echo "Required follow-up:"
+  echo "  1. Update docs/architecture/data-model.md — 'Last validated' date + migrations table"
+  echo "  2. Confirm in DB console that migration applied correctly"
+  echo "  3. Log this in the dev journal: bash .claude/hooks/generate-journal-entry.sh"
+  echo "  4. If this was a risky migration: update docs/security/risk-register.md"
+}
+
+cmd_help() {
+  cat << 'HELP'
+
+Usage: ./scripts/db-promote.sh <command>
+
+  validate     Reset local DB + validate (no remote changes)
+  staging      Validate locally, then push to staging
+  production   Dry-run against production; FORCE=1 to apply
+
+Environment:
+  FORCE=1         Required to apply to production (safety gate)
+  STAGING_DB_URL  Staging connection string (from .env.staging)
+
+Safety gates:
+  - Staging is always validated before production
+  - Production requires FORCE=1 and a final dry-run
+  - Post-apply verification checklist is always printed
+
+HELP
+}
+
+case "$COMMAND" in
+  validate)   cmd_validate ;;
+  staging)    cmd_staging ;;
+  production) cmd_production ;;
+  *)          cmd_help; exit 1 ;;
+esac
+```
+
+---
+
+### FILE: `docs/architecture/data-model.md`
+
+```markdown
+# Data Model — [PROJECT_TITLE]
+
+Last validated: [DATE]
+Production DB identifier: [connection reference or project ref]
+
+---
+
+## Migrations applied
+
+| File / ID | Applied (date) | Environment | Description | Author |
+|-----------|---------------|-------------|-------------|--------|
+| (none yet) | — | — | Initial state | — |
+
+**Migration authoring rules:**
+- One logical change per migration file
+- Naming: `YYYYMMDDHHMMSS_short_description`
+- Forward-only by default. If a rollback script is needed, name it `..._rollback.sql` and document why
+- No destructive operations (DROP, TRUNCATE, ALTER..DROP COLUMN) without:
+  a) a corresponding rollback script
+  b) explicit approval noted in the PR
+  c) a DB snapshot confirmed before apply
+- Migrations must be idempotent where the toolchain supports it
+- No data migrations mixed with schema migrations unless unavoidable
+
+---
+
+## Schema
+
+_Document tables and their columns here as migrations are added._
+
+### [table_name]
+
+| Column | Type | Nullable | Description |
+|--------|------|----------|-------------|
+
+---
+
+## API / RPC Functions
+
+_Document server-controlled mutation endpoints here._
+
+### [function_name]
+
+**Purpose:**
+**Input:**
+**Output:**
+**Side effects:**
+**Idempotency:**
+
+---
+
+## Access Control
+
+_Document permission rules, RLS policies, or equivalent access control here._
+
+### [rule_name]
+
+**Who:** [which users or roles]
+**Can:** [what operations]
+**Cannot:** [what is blocked]
+**Enforcement:** [where this is checked — DB, middleware, server function]
+
+---
+
+## Environments
+
+| Environment | Connection / Identifier | Notes |
+|-------------|------------------------|-------|
+| Local | [local URL/port] | Started via [command] |
+| Staging | [staging identifier] | Credentials in `.env.staging` |
+| Production | [production identifier] | Credentials in `.env.local` |
+```
+
+---
+
+### FILE: `docs/architecture/overview.md`
+
+```markdown
+# Architecture Overview — [PROJECT_TITLE]
+
+Last updated: [DATE]
+
+---
+
+## System diagram
+
+[Paste or link a system diagram here. Mermaid, image, or ASCII are all acceptable.]
+
+---
+
+## Components
+
+| Component | Technology | Purpose | Owner |
+|-----------|-----------|---------|-------|
+| Frontend | [FRAMEWORK] | [purpose] | [owner] |
+| Backend / DB | [BACKEND] | [purpose] | [owner] |
+| Auth | [AUTH] | [purpose] | [owner] |
+| Deployment | [PLATFORM] | [purpose] | [owner] |
+
+---
+
+## Key architectural decisions
+
+[List ADRs with one-line summaries. Update as decisions are made.]
+
+| ADR | Decision | Status |
+|-----|----------|--------|
+| ADR-0001 | [title] | accepted |
+
+---
+
+## Environment model
+
+Three environments: local → staging → production.
+See `docs/ops/environment-setup.md` for setup runbook.
+See `docs/contributing/developer-workflow.md § migrations` for promotion workflow.
+
+---
+
+## Trust boundaries
+
+[Document where trust transitions occur in the system.]
+
+- **Client → Server:** Clients display and collect. All authoritative state mutations go through the server.
+- **Server → DB:** [describe RLS, row-level permissions, or equivalent]
+- **Agent → Repo:** Agents operate at Tier 0–3 autonomously. Tier 4–5 require human confirmation. See `AGENTS.md`.
+```
+
+---
+
+### FILE: `docs/security/security-policy.md`
+
+```markdown
+# Security Policy — [PROJECT_TITLE]
+
+Last reviewed: [DATE]
+Next review due: [DATE + 6 months, or before soft launch]
+
+---
+
+## Secret handling
+
+**Rule: No secret ever touches a committed file, a log, a CI output, or a client.**
+
+| Secret type | Where it lives | Who can access |
+|-------------|---------------|----------------|
+| Production DB credentials | `.env.local` (gitignored), deployment platform env vars | Backend server only |
+| Staging DB credentials | `.env.staging` (gitignored) | Developers with staging access |
+| Service keys (payments, email, SMS) | Deployment platform env vars, server env only | Backend server only |
+| Admin/service-role keys | Server env only, never NEXT_PUBLIC_* or equivalent | Server only |
+| Public/anon keys | `.env.example` template, `NEXT_PUBLIC_*` is acceptable | Can be client-visible |
+
+**Client/server boundary rule:**
+Any variable prefixed `NEXT_PUBLIC_`, exposed to a browser bundle, or returned in a client-facing API response is visible to end users. Treat it as public. Never put secrets there.
+
+**Rotation policy:**
+Rotate credentials immediately if:
+- A secret is found in a committed file (even briefly)
+- A developer with access leaves the project
+- A deployment platform account is compromised
+- A secret appears in CI logs
+
+---
+
+## .env governance
+
+| File | Committed | Contains | Safe to share |
+|------|-----------|----------|---------------|
+| `.env.example` | Yes | Key names only, no values | Yes |
+| `.env.staging.example` | Yes | Key names only, no values | Yes |
+| `.env.local` | No (gitignored) | Production credentials | Never |
+| `.env.staging` | No (gitignored) | Staging credentials | Only with team |
+| `.env.development.local` | No (gitignored) | Local dev credentials | OK within team |
+
+Running `git grep -E 'API_KEY|SECRET|PASSWORD|TOKEN' -- '*.env*'` before committing is a reasonable manual check.
+CI secret scanning (truffleHog or equivalent) runs on every PR automatically.
+
+---
+
+## Dependency scanning
+
+- CI runs `npm audit --audit-level=high` (or equivalent) on every PR
+- Weekly scheduled scans run in CI
+- High or critical vulnerabilities block merges
+- Moderate vulnerabilities are tracked in the remediation backlog
+
+---
+
+## SAST baseline
+
+Minimum static analysis required:
+- Linting with security rules enabled (no-eval, no-implied-eval for JS; equivalent for other languages)
+- TypeScript strict mode (or equivalent type safety)
+- No raw SQL string concatenation
+- No `dangerouslySetInnerHTML` without explicit sanitization (React projects)
+
+---
+
+## License policy
+
+- All dependencies must have a permissive or copyleft license compatible with this project's license
+- GPL-licensed dependencies are flagged for legal review before inclusion in commercial projects
+- Unknown or missing licenses are flagged during dependency audit
+
+---
+
+## Data classification
+
+| Class | Examples | Handling |
+|-------|----------|----------|
+| Public | App content, public API responses | No restrictions |
+| Internal | System logs, error messages | Do not expose to clients |
+| Confidential | User emails, phone numbers, addresses | Encrypt at rest, do not log |
+| Sensitive | Passwords (never store plaintext), payment data, government IDs | Handle per compliance requirements |
+
+---
+
+## Logging and redaction rules
+
+- Never log credential values, tokens, or passwords
+- Never log full request bodies if they may contain passwords or payment data
+- PII in logs must be masked or hashed
+- Error messages returned to clients must not include stack traces, DB errors, or internal system details
+- Log levels in production: `info` minimum; `debug` only in development
+
+---
+
+## Incident severity classification
+
+| Severity | Definition | Response time | Examples |
+|----------|-----------|---------------|----------|
+| P0 — Critical | Production down, data breach, or auth bypass | Immediate | DB down, secret leaked, RLS bypassed |
+| P1 — High | Significant functionality impaired, potential data exposure | < 1 hour | Auth broken, payment failures, data corruption |
+| P2 — Medium | Degraded functionality, no data risk | < 4 hours | Feature broken, performance degraded |
+| P3 — Low | Minor issue, workaround exists | Next sprint | UI bug, non-critical error |
+
+---
+
+## Backup and restore expectations
+
+- Production DB: automated daily backups (verify this is enabled in your DB provider)
+- Before any destructive migration: manual snapshot confirmed
+- Backup restoration procedure documented in `docs/ops/runbook-index.md`
+- Backup restoration tested at least once before a production launch
+
+---
+
+## Least-privilege deployment
+
+- The deployment user/service account has only the permissions it needs to run the application
+- Admin credentials are not used for application runtime
+- Database connection from the application server uses a role with read/write, not superuser
+- Service accounts for third-party integrations are scoped to minimum required permissions
+```
+
+---
+
+### FILE: `docs/security/risk-register.md`
+
+```markdown
+# Risk Register — [PROJECT_TITLE]
+
+Last updated: [DATE]
+
+Risks are logged when identified and updated as status changes.
+This is a canonical record. Do not delete rows — update status to Closed with mitigation notes.
+
+## Format
+
+| ID | Description | Likelihood | Impact | Status | Mitigation | Opened | Closed |
+|----|-------------|-----------|--------|--------|------------|--------|--------|
+| R-NNN | [Risk] | Low/Med/High | Low/Med/High | Open/Mitigating/Closed | [What was done] | [date] | [date or —] |
+
+**Likelihood × Impact rough priority:**
+- High × High = must mitigate before production
+- High × Med or Med × High = must mitigate before soft launch
+- Med × Med or lower = track and mitigate in next sprint
+
+## Risks
+
+| ID | Description | Likelihood | Impact | Status | Mitigation | Opened | Closed |
+|----|-------------|-----------|--------|--------|------------|--------|--------|
+```
+
+---
+
+### FILE: `docs/quality/remediation-backlog.md`
+
+```markdown
+# Remediation Backlog — [PROJECT_TITLE]
+
+Last updated: [DATE]
+
+Work items from formal reviews. Each item links to its risk register entry where applicable.
+Priority: P0 = blocking release · P1 = high · P2 = normal · P3 = low.
+
+Do not delete rows. Move completed items to the Completed section with resolution notes.
+
+## Open
+
+| ID | Priority | Description | Linked Risk | Owner | Opened |
+|----|----------|-------------|-------------|-------|--------|
+
+## In Progress
+
+| ID | Priority | Description | Linked Risk | Owner | Started |
+|----|----------|-------------|-------------|-------|---------|
+
+## Completed
+
+| ID | Priority | Description | Linked Risk | Resolution | Closed |
+|----|----------|-------------|-------------|------------|--------|
+```
+
+---
+
+### FILE: `docs/quality/review-playbook.md`
+
+```markdown
+# Review Playbook — [PROJECT_TITLE]
+
+## When to run a formal review
+
+**Required:**
+- Before any public launch or stakeholder demo with production claims
+- After any change to auth, session management, or access control
+- After any change that touches PII or payment data
+- Before promoting a migration that contains destructive operations
+- After a security incident
+
+**Recommended:**
+- Weekly during active backend or security work
+- When onboarding a new developer or AI agent
+- When the codebase has not been reviewed in > 30 days
+
+---
+
+## Architecture review checklist
+
+- [ ] All data mutations are enforced server-side (no client-only enforcement of business rules)
+- [ ] Auth flow works end-to-end: sign-up, sign-in, session refresh, sign-out, anonymous upgrade
+- [ ] Session tokens are not stored in localStorage (use httpOnly cookies or equivalent)
+- [ ] No environment secrets are in `NEXT_PUBLIC_*` (or equivalent public bundle prefix)
+- [ ] All three environments are deployed and operational
+- [ ] Migrations have been promoted through all environments
+- [ ] Error states are handled gracefully — no raw stack traces or DB errors returned to clients
+- [ ] Rate limiting is in place for auth and mutation endpoints
+
+---
+
+## Security review checklist
+
+- [ ] No user-controlled input is concatenated into raw queries
+- [ ] Service/admin credentials are never accessible to client-side code
+- [ ] Secret scanning (truffleHog or equivalent) passes cleanly
+- [ ] Dependency audit shows no high/critical vulnerabilities
+- [ ] PII is not present in log output
+- [ ] Data access control is enforced at the DB or server layer, not just the UI layer
+- [ ] Risk register is up to date
+
+---
+
+## Migration review checklist (required before any destructive migration)
+
+- [ ] Migration has been reviewed by the DB owner
+- [ ] A rollback script exists (or rollback approach is explicitly documented as "manual restore")
+- [ ] A DB snapshot/backup exists and has been verified
+- [ ] Post-apply verification steps are defined
+- [ ] Staging promotion completed and verified before production
+- [ ] Team has been notified of the production migration window
+
+---
+
+## Post-review
+
+- Update `docs/quality/remediation-backlog.md` with new QA items
+- Update `docs/security/risk-register.md` with new risks
+- Create ADRs for any decisions made during the review
+- Run journal entry: `bash .claude/hooks/generate-journal-entry.sh`
+```
+
+---
+
+### FILE: `docs/ops/environment-setup.md`
+
+```markdown
+# Environment Setup — [PROJECT_TITLE]
+
+## Environment inventory
+
+| Environment | URL | Backend / DB | Who operates |
+|-------------|-----|-------------|--------------|
+| Local | `localhost:[PORT]` | [Local, e.g. Docker] | Any developer |
+| Staging | [staging URL] | [Staging backend] | Dev team |
+| Production | [PRODUCTION_URL] | [Production backend] | Lead + DevOps |
+
+## Local setup (first-time)
+
+```bash
+git clone <repo-url> && cd [PROJECT_SLUG]
+[version manager install, e.g. nvm install]
+[install dependencies]
+[start local backend, e.g. docker-compose up or supabase start]
+cp .env.example .env.local
+# Fill in .env.local with local service credentials (never production values)
+[run migrations locally]
+[start dev server]
+# → http://localhost:[PORT]
+```
+
+## Local service URLs
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| App | `http://localhost:[PORT]` | Dev server |
+| [DB / Backend] | `http://localhost:[PORT]` | Local DB or API |
+| [Email catcher] | `http://localhost:[PORT]` | Catches transactional email locally |
+
+## Environment variable precedence
+
+| File | Committed | Loaded when | Points at |
+|------|-----------|-------------|-----------|
+| `.env.development.local` | No | `dev` command | Local backend |
+| `.env.staging.local` | No | `dev:staging` command | Staging backend |
+| `.env.local` | No | `build`, production | Production backend |
+| `.env.staging` | No | `db:promote:staging` script only | Staging DB URL for CLI |
+| `.env.example` | Yes | Never (template) | — |
+
+**Safety rule:** `.env.development.local` overrides `.env.local` during local dev. If it exists and has
+the correct local values, you cannot accidentally write to production during normal development.
+
+## Staging setup (one-time)
+
+[Step-by-step: provision staging backend, fill in `.env.staging` and `.env.staging.local`,
+configure deployment platform preview env vars to point at staging backend.]
+
+## Production setup (one-time)
+
+[Step-by-step: provision production backend, fill in `.env.local`,
+link CLI tools to production, run initial migration promotion.]
+
+## Migration promotion
+
+```bash
+[pm] run db:validate                    # Reset local + validate
+[pm] run db:promote:staging             # Push to staging
+FORCE=1 [pm] run db:promote:production  # Push to production (requires staging first)
+```
+
+Full process: `docs/contributing/developer-workflow.md § migrations`
+
+## Recovery checklist
+
+- Wrong environment active: DevTools → Network → check request host
+- Local DB corrupted: [reset command]
+- Staging broken: [steps to reset staging]
+- Production incident: `docs/ops/incident-template.md`
+```
+
+---
+
+### FILE: `docs/ops/runbook-index.md`
+
+```markdown
+# Runbook Index — [PROJECT_TITLE]
+
+This is the master index of all operational procedures.
+Each runbook should be a standalone document that a developer can follow during an incident.
+
+| Runbook | Location | Covers | Last tested |
+|---------|----------|--------|-------------|
+| Environment setup | `docs/ops/environment-setup.md` | Local/staging/prod setup | [date] |
+| Release checklist | `docs/ops/release-checklist.md` | Pre/post release gates | [date] |
+| Rollback checklist | `docs/ops/rollback-checklist.md` | Rollback decision + steps | [date] |
+| Incident response | `docs/ops/incident-template.md` | Live incident structure | [date] |
+| DB backup restore | [link or "not yet written"] | Restoring from DB backup | [date or "untested"] |
+| [Service name] outage | [link or "not yet written"] | What to do if X is down | [date or "untested"] |
+
+**Runbook hygiene:** A runbook that has never been tested is a guess. Test each runbook before a production launch.
+```
+
+---
+
+### FILE: `docs/ops/release-checklist.md`
+
+```markdown
+# Release Checklist — [PROJECT_TITLE]
+
+Use this checklist before and after every production release.
+A release includes: new deployments, schema migrations, and infrastructure changes.
+
+---
+
+## Pre-release
+
+### Code quality
+- [ ] All PRs targeting this release have been merged to `preview`
+- [ ] CI passes on `preview` branch (0 type errors, 0 lint errors)
+- [ ] PR preview URLs have been verified by at least one reviewer
+
+### Migrations (skip if no migrations in this release)
+- [ ] `db:promote:staging` completed and verified
+- [ ] Migration reviewed by DB owner
+- [ ] Rollback plan documented (rollback script or manual restore procedure)
+- [ ] DB snapshot/backup confirmed before promoting to production
+
+### Security
+- [ ] No new high/critical dependency vulnerabilities
+- [ ] No secrets in the diff
+- [ ] If auth or access control changed: security review completed
+
+### Documentation
+- [ ] `CHANGELOG.md` updated with this release
+- [ ] `docs/architecture/data-model.md` updated if schema changed
+- [ ] Any new ADRs are in accepted state
+
+### Smoke test baseline
+- [ ] [Describe the minimal set of flows to verify after deploy — adapt to project]
+- [ ] User can sign in / auth flow works
+- [ ] Primary user action works end-to-end
+- [ ] No console errors on key pages
+
+---
+
+## Deploy
+
+- [ ] Merge `preview → main`
+- [ ] Confirm deployment completes in deployment platform
+- [ ] Run `FORCE=1 db:promote:production` if migrations are included
+- [ ] Verify migration applied correctly in production DB console
+
+---
+
+## Post-release
+
+- [ ] Run smoke tests against production
+- [ ] Confirm no elevated error rates in logs / monitoring
+- [ ] Tag the release in git: `git tag v[VERSION]`
+- [ ] Post release notes to team channel
+- [ ] Run dev journal: `bash .claude/hooks/generate-journal-entry.sh`
+
+---
+
+## If something breaks after deploy
+
+→ `docs/ops/rollback-checklist.md`
+```
+
+---
+
+### FILE: `docs/ops/rollback-checklist.md`
+
+```markdown
+# Rollback Checklist — [PROJECT_TITLE]
+
+Use this when a release causes a production problem and reverting is the right call.
+
+---
+
+## Decision: should we roll back?
+
+Answer these questions first. Rollback is not always the right move.
+
+| Question | Roll back if... | Fix forward if... |
+|----------|----------------|-------------------|
+| Is the problem data-corrupting or security-critical? | Yes | No |
+| Is there a DB migration involved? | Rollback is complex — assess | No migration = rollback is fast |
+| Is the fix known and trivial? | No | Yes |
+| How many users are affected? | Large % of users | Small % or workaround exists |
+| How long will a fix-forward take? | > 30 min | < 30 min |
+
+---
+
+## Application rollback (no migration)
+
+1. In deployment platform: redeploy the previous build or roll back to last stable deployment
+2. Verify rollback is live: check deployment status and smoke test
+3. Log the incident: `docs/ops/incident-template.md`
+
+## Application rollback (with migration)
+
+1. **Do not run schema rollback automatically.** Assess first.
+2. If the migration must be reversed:
+   - Stop writes to the affected tables (feature flag or maintenance mode if available)
+   - Run the rollback script (must be prepared in advance — see migration standards)
+   - Verify schema state in DB console
+   - Redeploy previous application code
+3. If no rollback script exists, the options are:
+   - Write and apply a compensating migration (forward-only fix)
+   - Restore from the pre-migration backup
+4. Document every action taken in the incident log
+
+## After rollback
+
+- [ ] Verify production is stable
+- [ ] Notify team
+- [ ] Log full incident: `docs/ops/incident-template.md`
+- [ ] Schedule postmortem within 48 hours: `docs/ops/postmortem-template.md`
+- [ ] Add rollback script requirement to remediation backlog if one was missing
+```
+
+---
+
+### FILE: `docs/ops/incident-template.md`
+
+```markdown
+# Incident Log — [DATE] — [SHORT TITLE]
+
+**Status:** Active | Resolved | Postmortem scheduled
+**Severity:** P0 / P1 / P2 / P3
+**Opened:** [datetime]
+**Resolved:** [datetime or "ongoing"]
+**Incident commander:** [name]
+
+---
+
+## What is happening
+
+[One paragraph: what is broken, who is affected, what the visible symptoms are]
+
+---
+
+## Timeline
+
+| Time | Action / observation |
+|------|---------------------|
+| HH:MM | [First alert or report] |
+| HH:MM | [Investigation step] |
+| HH:MM | [Fix attempted] |
+| HH:MM | [Resolution or current state] |
+
+---
+
+## Impact
+
+- **Users affected:** [estimate or "unknown"]
+- **Features impaired:** [list]
+- **Data at risk:** yes / no / unknown
+
+---
+
+## Current actions
+
+- [ ] [Who] is doing [what]
+
+---
+
+## Mitigation applied
+
+[What was done to stop the bleeding]
+
+---
+
+## Root cause (fill in after resolution)
+
+[What actually caused this]
+
+---
+
+## Resolution
+
+[What fixed it]
+
+---
+
+## Links
+
+- Deployment that caused this: [link]
+- PR that introduced the change: [link]
+- DB snapshot used (if applicable): [reference]
+
+---
+
+## Next steps
+
+- [ ] Postmortem scheduled: [date]
+- [ ] Remediation backlog updated
+- [ ] Risk register updated
+```
+
+---
+
+### FILE: `docs/ops/postmortem-template.md`
+
+```markdown
+# Postmortem — [DATE] — [INCIDENT TITLE]
+
+**Incident severity:** P0 / P1 / P2
+**Duration:** [start] → [end] ([total time])
+**Participants:** [names]
+**Postmortem date:** [date, within 48 hours of P0/P1 resolution]
+
+---
+
+## Summary
+
+[2–3 sentences: what happened, what the impact was, what fixed it]
+
+---
+
+## Root cause analysis
+
+**Immediate cause:** [the direct trigger]
+
+**Contributing factors:**
+- [Process gap]
+- [Missing test or validation]
+- [Missing runbook]
+- [Other]
+
+---
+
+## What went well
+
+- [Thing that worked]
+- [Detection that was fast]
+
+---
+
+## What went wrong
+
+- [Thing that slowed resolution]
+- [Missing tool or process]
+
+---
+
+## Action items
+
+| Action | Owner | Priority | Deadline |
+|--------|-------|----------|----------|
+| [Specific fix] | [name] | P0/P1/P2 | [date] |
+
+Add action items to `docs/quality/remediation-backlog.md`.
+
+---
+
+## Was the incident preventable?
+
+[Yes/No/Partially — explain]
+
+---
+
+## Blameless statement
+
+This postmortem is blameless. The goal is to understand system failure, not assign fault.
+Systems that punish people for failures get fewer honest postmortems and worse outcomes.
+```
+
+---
+
+### FILE: `docs/decisions/TEMPLATE.md`
+
+```markdown
+# ADR-NNNN: [Title]
+
+**Status:** proposed | accepted | superseded by [ADR-NNNN]
+**Date:** YYYY-MM-DD
+**Author:** [name]
+**Context source:** [link to conversation, issue, ticket, or PR]
+
+---
+
+## Context
+
+[Why this decision came up. The problem or constraint that forced a choice.
+Be specific — vague context makes the ADR useless in six months.]
+
+## Decision
+
+[What was decided and why. Include the reasoning, not just the conclusion.]
+
+## Consequences
+
+[What changes as a result. Include the downsides honestly — every decision has them.]
+
+## Alternatives considered
+
+[What else was evaluated and why it was rejected. At least one alternative, or note "none considered" with reason.]
+
+## Review trigger
+
+[What circumstances should cause this decision to be revisited — e.g., "if user volume exceeds 100k" or "if a commercial auth provider becomes available"]
+```
+
+---
+
+### FILE: `docs/product/TEMPLATE.md`
+
+```markdown
+# PRD-NNNN: [Title]
+
+**Status:** draft | review | accepted | deferred | superseded by PRD-NNNN
+**Date:** YYYY-MM-DD
+**Author:** [name]
+**Stakeholders:** [who needs to review or approve before implementation starts]
+
+---
+
+## Overview
+
+[What this is and the core problem it solves. 2–3 sentences. No jargon.]
+
+## Target audience
+
+| Persona | Who they are | What they need from this |
+|---------|-------------|--------------------------|
+
+## User stories
+
+- As a [persona], I want to [action], so that [value].
+
+## Functional requirements
+
+### Must have (P0)
+- [ ] [Requirement — specific, testable]
+
+### Should have (P1)
+- [ ] [Requirement]
+
+### Nice to have (P2)
+- [ ] [Requirement]
+
+### Out of scope (explicit)
+- [Item] — *reason excluded*
+
+## Technical constraints
+
+- [Constraint — e.g. "must work offline", "must not require login", "must complete in < 500ms"]
+
+## Success metrics
+
+| KPI | Target | How measured |
+|-----|--------|-------------|
+| [Metric] | [Value] | [Method] |
+
+## Dependencies
+
+- [Other PRDs, ADRs, external systems, or third-party services this depends on]
+
+## Open questions
+
+- [ ] [Question that must be resolved before or during implementation]
+
+## Related documents
+
+- [ADRs, designs, external references]
+```
+
+---
+
+### FILE: `CHANGELOG.md`
+
+```markdown
+# Changelog — [PROJECT_TITLE]
+
+All notable changes to this project are documented here.
+Format: `## [version or date] — [short title]`
+
+Each entry should include:
+- What changed (brief)
+- Why it changed (brief)
+- Any migration steps required for existing deployments
+- Link to the governing PRD or ADR
+
+---
+
+## Unreleased
+
+_Changes on `preview` not yet in production._
+
+---
+
+## [0.1.0] — [DATE]
+
+Initial release.
+```
+
+---
+
+### FILE: `.gitignore`
+
+Generate a `.gitignore` appropriate for the chosen stack. Always include:
+
+```
+# Environment — never commit credentials
+.env
+.env.*
+!.env.example
+!.env.staging.example
+!.env.staging.local.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code — gitignore local agent artifacts, keep committed harness files
+.claude/command-log.txt
+.claude/log-level.txt
+.claude/settings.json
+.agents/
+```
+
+Add stack-specific entries (`.next/`, `dist/`, `build/`, `node_modules/`, etc.) based on the chosen stack.
+
+---
+
+### FILE: `.env.example`
+
+```bash
+# [PROJECT_TITLE] — Environment variable template
+#
+# Copy this file to .env.local for production credentials.
+# Copy this file to .env.development.local for local dev credentials.
+# NEVER commit files with real values.
+# NEVER put secrets in NEXT_PUBLIC_* or equivalent browser-exposed variables.
+#
+# See docs/ops/environment-setup.md for the full environment setup guide.
+# See docs/security/security-policy.md for the secret handling policy.
+
+# ── [Service 1] ──────────────────────────────────────────────────────────────
+# [Where to find this value and what it's for]
+[VAR_NAME]=
+
+# ── [Service 2] ──────────────────────────────────────────────────────────────
+[VAR_NAME]=
+
+# ── Future / optional ────────────────────────────────────────────────────────
+# Uncomment when configured:
+# [VAR_NAME]=
+```
+
+---
+
+## C. Claude Code Operating Model
+
+### Startup orientation (every session)
+
+When Claude Code begins a session in this repository, it must read in this order before touching any files:
+
+1. `AGENTS.md` — trust tiers, stop conditions, what to update
+2. `docs/operating-principles.md` — engineering doctrine
+3. `CLAUDE.md` — project context, stack, current state
+4. `docs/contributing/developer-workflow.md` — branching and PR rules
+5. The specific task description, PRD, ADR, or issue for this session's work
+
+Claude Code must not begin modifying files before completing steps 1–3.
+
+### Required artifact updates
+
+Every significant change Claude Code makes must have companion documentation updated in the same session. The mapping is in `AGENTS.md § What to update when making changes`.
+
+If a companion doc update is not possible in the current session (out of scope, missing context), Claude Code must:
+1. Leave a clearly marked `TODO(agent): update [doc] for this change` in the affected code
+2. Explicitly note the pending update in its response summary
+3. Not mark the task complete until the human acknowledges the pending update
+
+### Stop conditions
+
+Claude Code must stop and defer to the human when:
+
+- The task scope is ambiguous and clarification would change the approach
+- A Tier 5 action is required
+- No governing artifact (PRD, ADR, issue) exists for a significant change
+- Documentation is missing or inconsistent
+- Code state does not match documentation
+- More than 3 files would be deleted, renamed, or restructured
+- Migration files are being generated
+- Conflicting instructions are present in the repo
+
+When stopping: state what was found, what the agent was about to do, and what information is needed.
+
+### Scope discipline
+
+Claude Code must not expand scope beyond the stated task. Specifically:
+- Do not "clean up" adjacent code while fixing a targeted bug
+- Do not add logging, error handling, or validation not explicitly requested
+- Do not refactor naming or formatting in files not directly changed
+- Do not add dependencies without explicit instruction
+- Do not improve surrounding tests or docs beyond the direct companion update for the change
+
+A session ends when the specific change is made and its required companion docs are updated. Not when adjacent code is also cleaner.
+
+### Handling ambiguity
+
+When intent is unclear: ask one clarifying question before proceeding.
+When safety is unclear: stop. A stopped session is recoverable. A destructive action may not be.
+When documentation and code conflict: note the conflict, do not silently resolve it by following one and ignoring the other.
+
+---
+
+## D. Enforcement Plan
+
+### CI enforcement (automated)
+
+| Check | Workflow | Blocks merge |
+|-------|----------|--------------|
+| Type check | `ci.yml` | Yes |
+| Lint | `ci.yml` | Yes |
+| Dependency audit (high/critical) | `security.yml` | Yes |
+| Secret scan | `security.yml` | Yes |
+| Migration companion doc | `docs-enforcement.yml` | Yes |
+| Security path companion doc | `docs-enforcement.yml` | Yes |
+| Dependency manifest/lockfile sync | `docs-enforcement.yml` | Yes |
+
+### Path-based review gates (CODEOWNERS)
+
+| Path | Required reviewer | Reason |
+|------|-----------------|--------|
+| `migrations/`, `supabase/migrations/` | DB owner | Schema changes are operational events |
+| `docs/architecture/data-model.md` | DB owner | Canonical schema record |
+| `src/auth/`, `middleware.*`, `utils/supabase/` | Security reviewer | Auth/session logic is high-risk |
+| `docs/security/` | Security reviewer | Security policy changes need scrutiny |
+| `.github/` | DevOps owner | CI/CD changes can bypass all other controls |
+| `scripts/` | DevOps owner | Deployment scripts are high-impact |
+| `AGENTS.md`, `CLAUDE.md`, `docs/operating-principles.md` | Project lead | Core doctrine changes need owner review |
+
+### Branch protection requirements (configure in GitHub UI)
+
+**`main` branch:**
+- Require PR before merging
+- Required approvals: 1 (adjust for team size)
+- Required status checks: `ci / checks`, `security / dependency-audit`, `security / secret-scan`, `docs-enforcement / companion-docs`
+- Require branches to be up to date before merging
+- Block direct pushes — no exceptions
+
+**`preview` branch:**
+- Require PR before merging
+- Required approvals: 1
+- Required status checks: `ci / checks`
+
+### PR template enforcement
+
+The PR template is not a suggestion. Its checklist must be completed before review.
+Reviewers are expected to check that the template is filled in, not just read the diff.
+
+If a PR is submitted with an empty checklist, the reviewer should request changes immediately.
+
+### Required artifacts before merging
+
+| PR type | Required before merge |
+|---------|-----------------------|
+| New feature | PRD exists and is linked |
+| Architectural decision | ADR exists and is in accepted state |
+| Database migration | `db:validate` passed; ownership announced; companion doc updated |
+| Security-sensitive change | Security review checklist completed in PR |
+| Destructive migration | Rollback plan documented; backup confirmed; lead approval |
+| Release to `main` | Release checklist in `docs/ops/release-checklist.md` completed |
+
+### What enforcement does not cover (human discipline required)
+
+- Prose quality in ADRs and PRDs — CI cannot check whether decisions are well-reasoned
+- Accuracy of documentation — CI can check that docs were touched, not that they are correct
+- Migration correctness — lint and dry-run catch syntax and obvious errors, not logical problems
+- Scope creep — reviewers must check that PRs do only what they claim
+
+---
+
+## F. Bootstrap Pack
+
+Files a repo generator or scaffolding script should create on day one, in order of priority:
+
+**Priority 1 — Required immediately:**
+1. `AGENTS.md`
+2. `CLAUDE.md`
+3. `docs/operating-principles.md`
+4. `docs/contributing/developer-workflow.md`
+5. `.github/pull_request_template.md`
+6. `.github/workflows/ci.yml`
+7. `.gitignore`
+8. `.env.example`
+
+**Priority 2 — Required before first external user or stakeholder demo:**
+9. `docs/security/security-policy.md`
+10. `docs/security/risk-register.md`
+11. `CODEOWNERS`
+12. `.github/workflows/security.yml`
+13. `docs/architecture/overview.md`
+14. `docs/architecture/data-model.md` (if DB)
+15. `scripts/db-promote.sh` (if DB)
+16. `docs/ops/environment-setup.md`
+
+**Priority 3 — Required before production launch:**
+17. `docs/ops/release-checklist.md`
+18. `docs/ops/rollback-checklist.md`
+19. `docs/ops/incident-template.md`
+20. `docs/ops/postmortem-template.md`
+21. `docs/ops/runbook-index.md`
+22. `.github/workflows/docs-enforcement.yml`
+23. `scripts/check-docs.sh`
+24. `CHANGELOG.md`
+
+**Always:**
+25. `docs/decisions/TEMPLATE.md`
+26. `docs/product/TEMPLATE.md`
+27. `docs/quality/remediation-backlog.md`
+28. `docs/quality/review-playbook.md`
+29. `.claude/settings.local.json`
+30. `.claude/hooks/log-command.sh`
+31. `.claude/hooks/generate-journal-entry.sh`
+
+---
+
+## Bootstrap Interview (for scaffolding agent)
+
+Collect answers before creating any files. Ask groups one at a time.
+
+**Group 1 — Identity**
+1. Project slug (kebab-case, e.g. `my-app`)
+2. Project title (human-readable, e.g. `My App`)
+3. One-sentence description
+4. Production URL (or "TBD")
+5. Core design principle — one non-negotiable sentence
+
+**Group 2 — Stack**
+6. Frontend framework
+7. Language
+8. CSS approach
+9. Backend / database
+10. Auth approach
+11. Deployment target
+12. Native mobile (yes/no + platform)
+13. PWA / service worker (yes/no)
+14. Package manager
+
+**Group 3 — Governance**
+15. Team size (number of humans)
+16. AI agents in use (list all tools)
+17. Database with versioned migrations (yes/no)
+18. Staging environment (yes/no)
+19. Compliance requirements (SOC2/HIPAA/GDPR/none)
+
+Once answers are collected:
+- Create Priority 1 files immediately
+- Create Priority 2 files if launching soon
+- Note Priority 3 files as next steps
+- Omit files for features marked "none" or "no"
+- Adapt all placeholder content to actual stack and team
+- Adapt `check-docs.sh` path patterns to the actual codebase structure
+- Adapt `CODEOWNERS` paths and handles to the actual team
