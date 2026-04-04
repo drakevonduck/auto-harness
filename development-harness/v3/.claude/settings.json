@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)",
+      "Bash(git fetch*)",
+      "Bash(git show*)",
+      "Bash(git stash list)",
+      "Bash(grep*)",
+      "Bash(find*)",
+      "Bash(ls*)",
+      "Bash(cat*)",
+      "Bash(bash scripts/validate-placeholders.sh)",
+      "Bash(bash scripts/check-doc-companions.sh*)"
+    ],
+    "deny": [
+      "Bash(git push origin main*)",
+      "Bash(git push origin staging*)",
+      "Bash(git push origin release*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(rm -rf*)",
+      "Bash(vercel deploy*)",
+      "Bash(npx supabase db push*)",
+      "Bash(npx prisma migrate*)",
+      "Bash(alembic upgrade*)",
+      "Bash(python manage.py migrate*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/log-command.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
