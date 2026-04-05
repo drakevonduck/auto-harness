@@ -1,0 +1,21 @@
+id: prototype
+type: delivery
+version: 1.0.0
+summary: Lightweight delivery posture for experiments and early validation without production operational burden.
+dependsOn:
+  - kernel/base
+conflictsWith:
+  - production-saas
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-module-graph
+reviewGates:
+  - Prototype mode does not waive security or secret-handling rules.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/delivery/prototype/README.md

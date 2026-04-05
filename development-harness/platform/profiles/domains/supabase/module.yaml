@@ -1,0 +1,43 @@
+id: supabase
+type: domain
+version: 1.0.0
+summary: Supabase domain overlay for project refs, auth boundaries, migrations, and hosted service integration records.
+dependsOn:
+  - kernel/base
+  - relational-postgres
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+  - docs/security/risk-register.md
+sensitivePaths:
+  - description: Supabase auth, schema, and hosted configuration
+    patterns:
+      - ^supabase/
+      - ^src/auth/
+      - ^src/middleware/
+      - session
+      - jwt
+      - token
+companionRules:
+  - description: Supabase auth or hosted-boundary changes require security or decision updates
+    triggerPaths:
+      - ^supabase/
+      - ^src/auth/
+      - ^src/middleware/
+      - session
+      - jwt
+      - token
+    requiredAny:
+      - ^docs/security/risk-register\.md$
+      - ^docs/adr/ADR-
+      - ^docs/architecture/overview\.md$
+    humanReview: Reviewers verify auth, policy, and hosted-boundary implications.
+validators:
+  - validate-companions
+reviewGates:
+  - Human review is required for auth, RLS, or token-handling changes.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/domains/supabase/README.md

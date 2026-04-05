@@ -1,0 +1,38 @@
+id: relational-postgres
+type: data
+version: 1.0.0
+summary: Relational data overlay for schema migrations, rollback discipline, and migration records.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/database/migration-readiness.md
+optionalArtifacts:
+  - docs/database/migration-records
+sensitivePaths:
+  - description: Schema migration and relational data changes
+    patterns:
+      - ^migrations/
+      - ^supabase/migrations/
+      - ^alembic/
+      - ^db/migrations/
+companionRules:
+  - description: Migration changes require a migration record or readiness artifact
+    triggerPaths:
+      - ^migrations/
+      - ^supabase/migrations/
+      - ^alembic/
+      - ^db/migrations/
+    requiredAny:
+      - ^docs/database/migration-readiness\.md$
+      - ^docs/database/migration-records/
+    humanReview: Reviewers verify rollback, compatibility, and verification steps are substantive.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Migration apply remains human-directed even if generation is automated.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/data/relational-postgres/README.md

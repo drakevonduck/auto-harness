@@ -1,0 +1,24 @@
+id: project-standard
+type: management
+version: 1.0.0
+summary: Project management overlay for scope, dependencies, milestones, owners, change tracking, and completion criteria.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/project/scope-plan.md
+  - docs/project/dependency-log.md
+  - docs/project/milestones.md
+  - docs/project/change-log.md
+optionalArtifacts:
+  - docs/ops/ownership-map.md
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-required-artifacts
+reviewGates:
+  - Human review must confirm owners and milestone realism.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/management/project-standard/README.md

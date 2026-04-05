@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/development-harness/manifest.schema.json",
+  "title": "Harness Manifest",
+  "type": "object",
+  "required": ["schemaVersion", "project", "modules", "overrides"],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "project": {
+      "type": "object",
+      "required": ["id", "name", "maturity", "criticality"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "maturity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "criticality": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical", "platform", "research", "internal"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "modules": {
+      "type": "object",
+      "properties": {
+        "core": { "$ref": "#/$defs/moduleList" },
+        "stacks": { "$ref": "#/$defs/moduleList" },
+        "architectures": { "$ref": "#/$defs/moduleList" },
+        "data": { "$ref": "#/$defs/moduleList" },
+        "delivery": { "$ref": "#/$defs/moduleList" },
+        "management": { "$ref": "#/$defs/moduleList" },
+        "domains": { "$ref": "#/$defs/moduleList" },
+        "agents": { "$ref": "#/$defs/moduleList" }
+      },
+      "additionalProperties": false
+    },
+    "overrides": {
+      "type": "object",
+      "properties": {
+        "requiredArtifacts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "disabledValidations": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "moduleList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)?$"
+      }
+    }
+  },
+  "additionalProperties": false
+}

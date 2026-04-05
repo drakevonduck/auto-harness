@@ -1,0 +1,20 @@
+id: base
+type: agent
+version: 1.0.0
+summary: Cross-agent operating pack for trust tiers, stop conditions, and audit expectations.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - AGENTS.md
+optionalArtifacts: []
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-agent-pack
+reviewGates:
+  - Agent packs define boundaries; humans still approve tier escalation and sensitive changes.
+agentAdapters:
+  - AGENTS.md
+compiledFragments:
+  - platform/agents/base/README.md

@@ -1,0 +1,47 @@
+id: production-saas
+type: delivery
+version: 1.0.0
+summary: Production SaaS delivery posture with environment, release, rollback, and risk artifacts required.
+dependsOn:
+  - kernel/base
+conflictsWith:
+  - prototype
+requiredArtifacts:
+  - docs/ops/environment-inventory.md
+  - docs/ops/release-checklist.md
+  - docs/ops/rollback-checklist.md
+  - docs/security/risk-register.md
+optionalArtifacts:
+  - docs/ops/runbook-index.md
+sensitivePaths:
+  - description: Delivery automation and deployment configuration
+    patterns:
+      - ^\.github/workflows/
+      - ^Dockerfile
+      - ^docker-compose
+      - ^terraform/
+      - ^deploy/
+      - ^infra/
+companionRules:
+  - description: Delivery automation changes require operational inventory or release process updates
+    triggerPaths:
+      - ^\.github/workflows/
+      - ^Dockerfile
+      - ^docker-compose
+      - ^terraform/
+      - ^deploy/
+      - ^infra/
+    requiredAny:
+      - ^docs/ops/environment-inventory\.md$
+      - ^docs/ops/release-checklist\.md$
+      - ^docs/ops/rollback-checklist\.md$
+    humanReview: Reviewers verify rollout, rollback, and topology implications.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Production posture requires named release ownership and rollback authority.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/delivery/production-saas/README.md

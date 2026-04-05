@@ -1,0 +1,38 @@
+id: media-pipeline
+type: domain
+version: 1.0.0
+summary: Media and photogrammetry domain overlay for derived artifacts, storage workflows, and operational traceability.
+dependsOn:
+  - kernel/base
+  - object-storage
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+  - docs/ops/runbook-index.md
+sensitivePaths:
+  - description: Media ingest, transform, and derived artifact workflows
+    patterns:
+      - ^media/
+      - ^pipelines/
+      - ^transforms/
+      - ^photogrammetry/
+companionRules:
+  - description: Media workflow changes require architecture or runbook updates
+    triggerPaths:
+      - ^media/
+      - ^pipelines/
+      - ^transforms/
+      - ^photogrammetry/
+    requiredAny:
+      - ^docs/architecture/overview\.md$
+      - ^docs/ops/runbook-index\.md$
+    humanReview: Reviewers verify operational replayability, storage impact, and quality expectations.
+validators:
+  - validate-companions
+reviewGates:
+  - Human review is required when workflows affect expensive recomputation or irreversible media handling.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/domains/media-pipeline/README.md

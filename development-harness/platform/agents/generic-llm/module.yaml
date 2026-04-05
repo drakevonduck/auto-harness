@@ -1,0 +1,21 @@
+id: generic-llm
+type: agent
+version: 1.0.0
+summary: Generic LLM agent pack for non-Claude tools that still need kernel-aligned trust and escalation rules.
+dependsOn:
+  - kernel/base
+  - base
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - AGENTS.md
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-agent-pack
+reviewGates:
+  - Generic packs must not claim permissions higher than the kernel permits.
+agentAdapters:
+  - AGENTS.md
+compiledFragments:
+  - platform/agents/generic-llm/README.md

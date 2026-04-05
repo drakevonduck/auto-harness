@@ -1,0 +1,21 @@
+schemaVersion: 1
+project:
+  id: development-harness-framework
+  name: Development Harness Framework
+  maturity: platform
+  criticality: medium
+modules:
+  core:
+    - kernel/base
+  delivery:
+    - internal-platform
+  management:
+    - project-standard
+  agents:
+    - base
+    - generic-llm
+overrides:
+  requiredArtifacts: []
+  disabledValidations:
+    - required-artifacts
+    - agent-pack

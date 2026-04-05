@@ -1,0 +1,22 @@
+id: product-lite
+type: management
+version: 1.0.0
+summary: Small-team product overlay for problem framing, requirements, release intent, and quality expectations.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/product/problem-statement.md
+  - docs/product/requirements.md
+  - docs/product/release-intent.md
+optionalArtifacts: []
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-required-artifacts
+reviewGates:
+  - Human review must verify requirements quality; validators only check structure and presence.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/management/product-lite/README.md

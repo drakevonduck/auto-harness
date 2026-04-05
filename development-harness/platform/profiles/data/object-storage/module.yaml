@@ -1,0 +1,35 @@
+id: object-storage
+type: data
+version: 1.0.0
+summary: Object storage overlay for bucket layout, retention, and artifact-lifecycle governance.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+  - docs/ops/runbook-index.md
+sensitivePaths:
+  - description: Object storage layout and retention configuration
+    patterns:
+      - ^storage/
+      - ^buckets/
+      - ^lifecycle/
+companionRules:
+  - description: Object storage behavior changes require architecture or ops documentation
+    triggerPaths:
+      - ^storage/
+      - ^buckets/
+      - ^lifecycle/
+    requiredAny:
+      - ^docs/architecture/overview\.md$
+      - ^docs/ops/runbook-index\.md$
+    humanReview: Reviewers verify retention and data-loss implications.
+validators:
+  - validate-companions
+reviewGates:
+  - Human review is required when retention or lifecycle policies change.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/data/object-storage/README.md

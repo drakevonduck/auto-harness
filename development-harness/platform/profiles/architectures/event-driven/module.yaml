@@ -1,0 +1,38 @@
+id: event-driven
+type: architecture
+version: 1.0.0
+summary: Event-driven overlay for publishers, consumers, and asynchronous workflow governance.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/architecture/overview.md
+optionalArtifacts:
+  - docs/ops/runbook-index.md
+sensitivePaths:
+  - description: Event contracts and async handlers
+    patterns:
+      - ^events/
+      - ^src/events/
+      - ^src/consumers/
+      - ^src/publishers/
+companionRules:
+  - description: Event contract changes require topology or decision updates
+    triggerPaths:
+      - ^events/
+      - ^src/events/
+      - ^src/consumers/
+      - ^src/publishers/
+    requiredAny:
+      - ^docs/architecture/overview\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify ordering, retry, and idempotency implications where applicable.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Human review is required for changes that affect delivery guarantees or replay behavior.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/architectures/event-driven/README.md

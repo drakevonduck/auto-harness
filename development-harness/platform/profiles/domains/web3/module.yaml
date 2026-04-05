@@ -1,0 +1,38 @@
+id: web3
+type: domain
+version: 1.0.0
+summary: Web3 domain overlay for chain integrations, contract interfaces, and wallet trust boundaries.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+  - docs/security/risk-register.md
+sensitivePaths:
+  - description: Smart contracts and wallet integration surfaces
+    patterns:
+      - ^contracts/
+      - ^abi/
+      - ^wallet/
+      - ^chain/
+companionRules:
+  - description: Contract or wallet changes require risk or architecture updates
+    triggerPaths:
+      - ^contracts/
+      - ^abi/
+      - ^wallet/
+      - ^chain/
+    requiredAny:
+      - ^docs/security/risk-register\.md$
+      - ^docs/architecture/overview\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify key-management, signing, and irreversible transaction implications.
+validators:
+  - validate-companions
+reviewGates:
+  - Human review is required for transaction-signing or irreversible state changes.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/domains/web3/README.md

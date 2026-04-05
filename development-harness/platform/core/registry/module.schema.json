@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/development-harness/module.schema.json",
+  "title": "Harness Module",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "version",
+    "summary",
+    "dependsOn",
+    "conflictsWith",
+    "requiredArtifacts",
+    "optionalArtifacts",
+    "sensitivePaths",
+    "companionRules",
+    "validators",
+    "reviewGates",
+    "agentAdapters",
+    "compiledFragments"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+(?:/[a-z0-9-]+)?$"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["core", "stack", "architecture", "data", "delivery", "management", "domain", "agent"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflictsWith": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requiredArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "optionalArtifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sensitivePaths": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/pathRule" }
+    },
+    "companionRules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/companionRule" }
+    },
+    "validators": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "reviewGates": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "agentAdapters": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "compiledFragments": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "pathRule": {
+      "type": "object",
+      "required": ["description", "patterns"],
+      "properties": {
+        "description": { "type": "string" },
+        "patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "companionRule": {
+      "type": "object",
+      "required": ["description", "triggerPaths", "requiredAny"],
+      "properties": {
+        "description": { "type": "string" },
+        "triggerPaths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "requiredAny": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "humanReview": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

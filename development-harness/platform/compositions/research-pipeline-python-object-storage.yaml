@@ -1,0 +1,27 @@
+schemaVersion: 1
+project:
+  id: research-pipeline-python-object-storage
+  name: Research Pipeline Python Object Storage
+  maturity: research
+  criticality: low
+modules:
+  core:
+    - kernel/base
+  stacks:
+    - python
+  architectures:
+    - event-driven
+  data:
+    - object-storage
+  delivery:
+    - prototype
+  management:
+    - project-standard
+  domains:
+    - media-pipeline
+  agents:
+    - base
+    - generic-llm
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

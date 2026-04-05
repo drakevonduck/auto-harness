@@ -1,0 +1,34 @@
+id: document-store
+type: data
+version: 1.0.0
+summary: Document database overlay for schema-flexible data models, indexing discipline, and contract recording.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts: []
+optionalArtifacts:
+  - docs/architecture/overview.md
+sensitivePaths:
+  - description: Document schemas and index configuration
+    patterns:
+      - ^schemas/
+      - ^indexes/
+      - ^mongodb/
+companionRules:
+  - description: Document-model changes require architecture or ADR updates
+    triggerPaths:
+      - ^schemas/
+      - ^indexes/
+      - ^mongodb/
+    requiredAny:
+      - ^docs/architecture/overview\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify backward compatibility and data-shape impact.
+validators:
+  - validate-companions
+reviewGates:
+  - Human review is required when loose schema changes create compatibility risk.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/data/document-store/README.md

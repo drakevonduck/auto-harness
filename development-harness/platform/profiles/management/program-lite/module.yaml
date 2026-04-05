@@ -1,0 +1,23 @@
+id: program-lite
+type: management
+version: 1.0.0
+summary: Program coordination overlay for multi-workstream dependencies, stakeholder reporting, and governance cadence.
+dependsOn:
+  - kernel/base
+  - project-standard
+conflictsWith: []
+requiredArtifacts:
+  - docs/program/workstream-map.md
+  - docs/program/stakeholder-report.md
+  - docs/program/governance-cadence.md
+optionalArtifacts: []
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-required-artifacts
+reviewGates:
+  - Human review must confirm cross-team dependencies and stakeholder expectations are current.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/management/program-lite/README.md

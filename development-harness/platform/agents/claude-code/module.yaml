@@ -1,0 +1,37 @@
+id: claude-code
+type: agent
+version: 1.0.0
+summary: Claude Code operating pack for startup sequence, scope control, permission adapters, and compatibility entrypoints.
+dependsOn:
+  - kernel/base
+  - base
+conflictsWith: []
+requiredArtifacts:
+  - CLAUDE.md
+  - .claude/settings.json
+optionalArtifacts:
+  - .claude/hooks/log-command.sh
+sensitivePaths:
+  - description: Claude adapter and permissions
+    patterns:
+      - ^CLAUDE\.md$
+      - ^\.claude/
+companionRules:
+  - description: Claude adapter changes require base agent or kernel review context
+    triggerPaths:
+      - ^CLAUDE\.md$
+      - ^\.claude/
+    requiredAny:
+      - ^AGENTS\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that tool-specific permissions still honor kernel trust boundaries.
+validators:
+  - validate-agent-pack
+  - validate-companions
+reviewGates:
+  - Tool-specific allowlists must not bypass kernel tier policy.
+agentAdapters:
+  - CLAUDE.md
+  - .claude/settings.json
+compiledFragments:
+  - platform/agents/claude-code/README.md

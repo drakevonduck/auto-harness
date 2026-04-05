@@ -1,0 +1,44 @@
+id: python
+type: stack
+version: 1.0.0
+summary: Python overlay for interpreter pinning, dependency governance, packaging choices, and test/lint expectations.
+dependsOn:
+  - kernel/base
+conflictsWith:
+  - node-typescript
+requiredArtifacts: []
+optionalArtifacts:
+  - pyproject.toml
+  - requirements.txt
+  - poetry.lock
+  - uv.lock
+  - .python-version
+sensitivePaths:
+  - description: Python runtime and dependency configuration
+    patterns:
+      - ^pyproject\.toml$
+      - ^requirements\.txt$
+      - ^poetry\.lock$
+      - ^uv\.lock$
+      - ^\.python-version$
+companionRules:
+  - description: Dependency or interpreter changes require rationale in architecture or ADR records
+    triggerPaths:
+      - ^pyproject\.toml$
+      - ^requirements\.txt$
+      - ^poetry\.lock$
+      - ^uv\.lock$
+      - ^\.python-version$
+    requiredAny:
+      - ^docs/adr/ADR-
+      - ^docs/architecture/overview\.md$
+    humanReview: Reviewers verify upgrade and packaging decisions are intentional and compatible with delivery posture.
+validators:
+  - validate-module-graph
+  - validate-companions
+reviewGates:
+  - Dependency installation and migration apply commands remain Tier 4 actions.
+agentAdapters:
+  - platform/agents/claude-code
+compiledFragments:
+  - platform/profiles/stacks/python/README.md

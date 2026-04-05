@@ -1,0 +1,55 @@
+id: kernel/base
+type: core
+version: 1.0.0
+summary: Universal governance kernel for lifecycle controls, auditability, record discipline, and operational readiness.
+dependsOn: []
+conflictsWith: []
+requiredArtifacts:
+  - HARNESS.md
+  - AGENTS.md
+  - docs/operating-principles.md
+optionalArtifacts:
+  - docs/architecture/overview.md
+  - docs/ops/ownership-map.md
+sensitivePaths:
+  - description: Governance entrypoints
+    patterns:
+      - ^HARNESS\.md$
+      - ^AGENTS\.md$
+      - ^CLAUDE\.md$
+      - ^\.github/CODEOWNERS$
+  - description: Governance automation
+    patterns:
+      - ^\.github/workflows/
+      - ^scripts/
+companionRules:
+  - description: Governance changes require governance rationale or operating-model update
+    triggerPaths:
+      - ^HARNESS\.md$
+      - ^AGENTS\.md$
+      - ^CLAUDE\.md$
+      - ^\.github/CODEOWNERS$
+      - ^\.github/workflows/
+      - ^scripts/
+    requiredAny:
+      - ^docs/adr/ADR-
+      - ^docs/operating-principles\.md$
+    humanReview: Reviewers must verify that governance changes are intentional and not merely mechanical.
+validators:
+  - validate-manifest
+  - validate-module-graph
+  - validate-placeholders
+  - validate-companions
+reviewGates:
+  - Human review is mandatory for governance entrypoint changes.
+  - Validator success never replaces ownership review for protected governance files.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/core/kernel/base/doctrine.md
+  - platform/core/kernel/base/trust-model.md
+  - platform/core/kernel/base/lifecycle-controls.md
+  - platform/core/kernel/base/canonical-records.md
+  - platform/core/kernel/base/enforcement-model.md
+  - platform/core/kernel/base/audit-model.md
+  - platform/core/kernel/base/ops-readiness.md

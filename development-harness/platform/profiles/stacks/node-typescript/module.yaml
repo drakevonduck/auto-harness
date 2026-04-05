@@ -1,0 +1,44 @@
+id: node-typescript
+type: stack
+version: 1.0.0
+summary: Node.js and TypeScript overlay for runtime pinning, package governance, CI expectations, and tool permissions.
+dependsOn:
+  - kernel/base
+conflictsWith:
+  - python
+requiredArtifacts: []
+optionalArtifacts:
+  - .nvmrc
+  - package.json
+  - tsconfig.json
+  - .github/workflows/stack.yml
+sensitivePaths:
+  - description: Node and TypeScript runtime or dependency configuration
+    patterns:
+      - ^package\.json$
+      - ^package-lock\.json$
+      - ^pnpm-lock\.yaml$
+      - ^yarn\.lock$
+      - ^tsconfig\.
+      - ^\.nvmrc$
+companionRules:
+  - description: Major dependency or runtime changes require architecture or decision context
+    triggerPaths:
+      - ^package\.json$
+      - ^package-lock\.json$
+      - ^pnpm-lock\.yaml$
+      - ^yarn\.lock$
+      - ^\.nvmrc$
+    requiredAny:
+      - ^docs/adr/ADR-
+      - ^docs/architecture/overview\.md$
+    humanReview: Reviewers verify that supply-chain and runtime impacts are explained, not just recorded.
+validators:
+  - validate-module-graph
+  - validate-companions
+reviewGates:
+  - Dependency installation remains a Tier 4 action and must be human-directed.
+agentAdapters:
+  - platform/agents/claude-code
+compiledFragments:
+  - platform/profiles/stacks/node-typescript/README.md

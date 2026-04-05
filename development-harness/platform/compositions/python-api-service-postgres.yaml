@@ -1,0 +1,26 @@
+schemaVersion: 1
+project:
+  id: python-api-service-postgres
+  name: Python API Service Postgres
+  maturity: production
+  criticality: medium
+modules:
+  core:
+    - kernel/base
+  stacks:
+    - python
+  architectures:
+    - api-service
+  data:
+    - relational-postgres
+  delivery:
+    - production-saas
+  management:
+    - product-lite
+    - project-standard
+  agents:
+    - base
+    - generic-llm
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

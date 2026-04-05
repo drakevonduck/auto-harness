@@ -1,0 +1,39 @@
+id: web-app
+type: architecture
+version: 1.0.0
+summary: Web application overlay covering browser/server boundaries, UI surfaces, and topology documentation expectations.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/architecture/overview.md
+optionalArtifacts: []
+sensitivePaths:
+  - description: UI and browser-facing boundaries
+    patterns:
+      - ^app/
+      - ^src/ui/
+      - ^src/components/
+      - ^src/pages/
+      - ^public/
+companionRules:
+  - description: Web boundary changes require architecture overview updates
+    triggerPaths:
+      - ^app/
+      - ^src/ui/
+      - ^src/components/
+      - ^src/pages/
+      - ^public/
+    requiredAny:
+      - ^docs/architecture/overview\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that trust boundaries between browser, edge, and server remain explicit.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Human review is required for changes that move validation or trust decisions into browser code.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/architectures/web-app/README.md

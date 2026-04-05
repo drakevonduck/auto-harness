@@ -1,0 +1,22 @@
+id: internal-platform
+type: delivery
+version: 1.0.0
+summary: Internal platform posture for reusable shared systems with stronger ownership and dependency tracking than a prototype.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/project/dependency-log.md
+  - docs/project/milestones.md
+optionalArtifacts:
+  - docs/architecture/overview.md
+sensitivePaths: []
+companionRules: []
+validators:
+  - validate-required-artifacts
+reviewGates:
+  - Shared platform changes require explicit owner visibility even when user impact is indirect.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/delivery/internal-platform/README.md

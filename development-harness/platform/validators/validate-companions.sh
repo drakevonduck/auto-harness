@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HARNESS_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+PLATFORM_ROOT="${HARNESS_ROOT}/platform"
+MANIFEST_PATH="${1:-${HARNESS_ROOT}/harness.manifest.yaml}"
+PROJECT_ROOT="${2:-$(pwd)}"
+BASE_BRANCH="${3:-main}"
+
+ruby -I"${SCRIPT_DIR}/lib" - "${PLATFORM_ROOT}" "${MANIFEST_PATH}" "${PROJECT_ROOT}" "${BASE_BRANCH}" <<'RUBY'
+require "harness_registry"
+
+platform_root = ARGV[0]
+manifest_path = ARGV[1]
+project_root = ARGV[2]
+base_branch = ARGV[3]
+manifest = HarnessRegistry.load_manifest(manifest_path)
+
+if HarnessRegistry.disabled_validation?(manifest, "companions")
+  puts "✓ Companion validation disabled by manifest override"
+  exit 0
+end
+
+modules = HarnessRegistry.active_modules(platform_root, manifest)
+changed_files = HarnessRegistry.changed_files(project_root, base_branch)
+
+if changed_files.empty?
+  puts "No changed files detected relative to #{base_branch}. Skipping companion validation."
+  exit 0
+end
+
+failures = []
+
+modules.each do |mod|
+  Array(mod["companionRules"]).each do |rule|
+    triggered = changed_files.any? { |path| HarnessRegistry.patterns_match?(rule["triggerPaths"], path) }
+    next unless triggered
+
+    satisfied = changed_files.any? { |path| HarnessRegistry.patterns_match?(rule["requiredAny"], path) }
+    next if satisfied
+
+    failures << {
+      "module" => mod["id"],
+      "description" => rule["description"],
+      "required" => Array(rule["requiredAny"]),
+      "review" => rule["humanReview"]
+    }
+  end
+end
+
+if failures.empty?
+  puts "✓ Companion validation passed."
+else
+  warn "✗ Companion validation failed:"
+  failures.each do |failure|
+    warn "  - #{failure['module']}: #{failure['description']}"
+    failure["required"].each { |pattern| warn "    required change matching #{pattern}" }
+    unless failure["review"].to_s.empty?
+      warn "    human review: #{failure['review']}"
+    end
+  end
+  exit 1
+end
+RUBY
