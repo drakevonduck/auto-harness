@@ -1,7 +1,7 @@
 id: product-lite
 type: management
-version: 1.0.0
-summary: Small-team product overlay for problem framing, requirements, release intent, and quality expectations.
+version: 1.1.0
+summary: Small-team product overlay for problem framing, personas, requirements, and release intent. Designed to work with or without upstream discovery artifacts.
 dependsOn:
   - kernel/base
 conflictsWith: []
@@ -9,13 +9,26 @@ requiredArtifacts:
   - docs/product/problem-statement.md
   - docs/product/requirements.md
   - docs/product/release-intent.md
-optionalArtifacts: []
+optionalArtifacts:
+  - docs/product/personas.md
+  - docs/discovery/intake-questionnaire.md
+  - docs/discovery/mvp-scope.md
 sensitivePaths: []
-companionRules: []
+companionRules:
+  - description: Requirements changes during development must be reflected in project change-log or a new ADR
+    triggerPaths:
+      - ^docs/product/requirements\.md$
+      - ^docs/product/problem-statement\.md$
+    requiredAny:
+      - ^docs/project/change-log\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that scope changes are intentional, out-of-scope items are still named, and persona assumptions are still valid.
 validators:
   - validate-required-artifacts
+  - validate-companions
 reviewGates:
-  - Human review must verify requirements quality; validators only check structure and presence.
+  - Human review must verify requirements quality and that out-of-scope items are explicitly named — validators only check structure and presence.
+  - Human review must confirm success metrics are concrete and measurable, not feelings.
 agentAdapters:
   - platform/agents/base
 compiledFragments:

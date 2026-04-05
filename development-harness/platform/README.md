@@ -2,6 +2,21 @@
 
 `platform/` is the new source-of-truth layout for the development harness framework.
 
+## Front Door
+
+Projects can start from a raw idea, a set of mockups, a Vercel prototype, or a detailed spec —
+the intake questionnaire meets the project wherever it is and extracts what is needed to produce
+product artifacts and select the right module composition.
+
+**Start here:** [`platform/workflow/discovery-to-composition.md`](workflow/discovery-to-composition.md)
+— walks from first idea to a running `harness.manifest.yaml` in eight steps.
+
+**Intake questionnaire:** [`platform/templates/discovery/intake-questionnaire.md`](templates/discovery/intake-questionnaire.md)
+— a structured 8-section instrument for use with clients, stakeholders, or as a self-interview.
+
+**Starter composition for the discovery phase:** [`platform/compositions/new-product-discovery.yaml`](compositions/new-product-discovery.yaml)
+— use this manifest before your stack is chosen; replace it after Step 6 of the workflow.
+
 ## Structure
 
 - `core/`: universal doctrine, lifecycle rules, schemas, and kernel metadata

@@ -1,0 +1,33 @@
+id: discovery-intake
+type: management
+version: 1.0.0
+summary: Discovery and intake overlay for projects starting from an idea, mockup, or informal requirements. Structures the path from problem space to MVP scope and harness composition.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/discovery/intake-questionnaire.md
+  - docs/discovery/mvp-scope.md
+optionalArtifacts:
+  - docs/product/personas.md
+  - docs/discovery/starting-assets.md
+sensitivePaths: []
+companionRules:
+  - description: Requirements changes post-discovery must be reflected in project change-log or a new ADR
+    triggerPaths:
+      - ^docs/product/requirements\.md$
+      - ^docs/discovery/mvp-scope\.md$
+    requiredAny:
+      - ^docs/project/change-log\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that scope changes are intentional and out-of-scope items are still explicitly named.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Human must verify MVP scope names explicit out-of-scope items, not just in-scope items.
+  - Human must verify requirements are traceable to intake questionnaire answers.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/management/discovery-intake/README.md
