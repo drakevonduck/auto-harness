@@ -1,0 +1,16 @@
+schemaVersion: 1
+project:
+  id: broken-bad-dependency
+  name: Broken Bad Dependency
+  maturity: prototype
+  criticality: low
+modules:
+  core:
+    - kernel/base
+  management:
+    - program-lite
+    # program-lite depends on project-standard, which is not declared here.
+    # validate-module-graph.sh must fail with: program-lite depends on missing module project-standard
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

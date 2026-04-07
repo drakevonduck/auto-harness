@@ -1,0 +1,55 @@
+id: testing-standard
+type: management
+version: 1.0.0
+summary: Testing governance overlay — test strategy, coverage thresholds, and agent testing discipline for projects where quality is a delivery requirement.
+dependsOn:
+  - kernel/base
+conflictsWith: []
+requiredArtifacts:
+  - docs/testing/test-strategy.md
+  - docs/testing/coverage-thresholds.md
+optionalArtifacts:
+  - docs/testing/test-plan.md
+sensitivePaths:
+  - description: Coverage thresholds and test strategy — changes affect quality gates
+    patterns:
+      - ^docs/testing/
+      - ^\.github/workflows/.*test
+      - ^jest\.config
+      - ^vitest\.config
+      - ^pytest\.ini$
+      - ^pyproject\.toml$
+      - ^setup\.cfg$
+companionRules:
+  - description: Coverage threshold changes require a change-log entry or ADR — thresholds are architectural commitments
+    triggerPaths:
+      - ^docs/testing/coverage-thresholds\.md$
+    requiredAny:
+      - ^docs/project/change-log\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that threshold changes are intentional and that the rationale is documented.
+  - description: Test strategy changes require a change-log entry — strategy shifts affect how all future tests are written
+    triggerPaths:
+      - ^docs/testing/test-strategy\.md$
+    requiredAny:
+      - ^docs/project/change-log\.md$
+      - ^docs/adr/ADR-
+    humanReview: Reviewers verify that strategy changes are consistent with current delivery posture and stack.
+validators:
+  - validate-required-artifacts
+  - validate-companions
+reviewGates:
+  - Coverage thresholds must be met before production-saas delivery milestone is considered complete.
+  - Test strategy must name the testing pyramid layers in use and which are enforced in CI.
+  - Agents must not reduce declared coverage thresholds without human approval.
+agentAdapters:
+  - platform/agents/base
+compiledFragments:
+  - platform/profiles/management/testing-standard/README.md
+recommendedSkills:
+  # --- Agent Skills format (SKILL.md directories) ---
+  - harness-governance   # trust tiers and companion rules (source: platform/skills/)
+  - harness-testing      # test strategy patterns, coverage analysis, framework guidance (source: platform/skills/)
+
+  # --- OpenClaw / ClawHub ecosystem (clawhub install <slug>) ---
+  # (no curated testing-specific OpenClaw skills at this time — use harness-testing skill)

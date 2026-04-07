@@ -1,0 +1,17 @@
+schemaVersion: 1
+project:
+  id: broken-conflict
+  name: Broken Conflict
+  maturity: prototype
+  criticality: low
+modules:
+  core:
+    - kernel/base
+  delivery:
+    - prototype
+    - production-saas
+    # prototype and production-saas conflict with each other.
+    # validate-module-graph.sh must fail with: prototype conflicts with active module production-saas
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

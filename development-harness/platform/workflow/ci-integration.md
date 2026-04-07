@@ -74,7 +74,7 @@ jobs:
             $MANIFEST $PROJECT_ROOT ${{ github.base_ref }}
 
       - name: Validate placeholders
-        run: bash $PLATFORM_ROOT/validators/validate-placeholders.sh $MANIFEST $PROJECT_ROOT
+        run: bash $PLATFORM_ROOT/validators/validate-placeholders.sh $PROJECT_ROOT
 
       - name: Validate agent pack
         run: bash $PLATFORM_ROOT/validators/validate-agent-pack.sh $MANIFEST $PROJECT_ROOT
@@ -217,7 +217,7 @@ jobs:
         run: |
           bash development-harness/platform/validators/validate-companions.sh \
             harness.manifest.yaml . ${{ github.base_ref }}
-      - run: bash development-harness/platform/validators/validate-placeholders.sh harness.manifest.yaml .
+      - run: bash development-harness/platform/validators/validate-placeholders.sh .
       - run: bash development-harness/platform/validators/validate-agent-pack.sh harness.manifest.yaml .
 
   stack:
@@ -240,12 +240,51 @@ visible in the PR status checks.
 
 ---
 
+## Harness Self-Tests in CI
+
+If you are developing the platform itself (or vendoring it and want regression coverage),
+add a job to run the harness test suite:
+
+```yaml
+  harness-tests:
+    name: Harness Self-Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+
+      - name: Unit tests (registry logic)
+        run: |
+          ruby -I development-harness/platform/validators/lib \
+               development-harness/platform/validators/test/test_harness_registry.rb
+
+      - name: Integration tests (validator scripts)
+        run: |
+          ruby -I development-harness/platform/validators/lib \
+               development-harness/platform/validators/test/test_validators_integration.rb
+```
+
+The integration tests shell out to the actual validator scripts against fixture projects in
+`platform/validators/test/fixtures/projects/`. They verify that each validator exits 0 on
+valid input and exits 1 with the correct error message on each known-bad fixture.
+
+The placeholder tests require ripgrep — they are automatically skipped if `rg` is not
+available, and will run in CI where it is installed.
+
+---
+
 ## Reference
 
 | Resource | Path |
-|----------|------|
+| -------- | ---- |
 | Validator scripts | `platform/validators/` |
 | Ruby registry library | `platform/validators/lib/harness_registry.rb` |
-| Validator test suite | `platform/validators/test/test_harness_registry.rb` |
+| Unit test suite | `platform/validators/test/test_harness_registry.rb` |
+| Integration test suite | `platform/validators/test/test_validators_integration.rb` |
+| Test fixtures | `platform/validators/test/fixtures/projects/` |
 | Starter discovery manifest | `platform/compositions/new-product-discovery.yaml` |
 | Troubleshooting validator errors | `platform/workflow/troubleshooting.md` |

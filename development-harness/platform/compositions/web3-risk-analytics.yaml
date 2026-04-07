@@ -19,6 +19,7 @@ modules:
     - discovery-intake
     - product-lite
     - project-standard
+    - testing-standard
   domains:
     - web3
   agents:

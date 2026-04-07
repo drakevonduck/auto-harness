@@ -40,6 +40,7 @@ recommendedSkills:
   # Install to .agents/skills/ or .claude/skills/; source: platform/skills/
   - harness-governance   # always — trust tiers, companion rules, lifecycle controls
   # Add harness-web3 for Web3 projects (source: platform/skills/)
+  # Add harness-testing for projects with testing-standard module active (source: platform/skills/)
 
   # --- OpenClaw / ClawHub ecosystem (clawhub install <slug>) ---
   # Core (most projects — curated list):

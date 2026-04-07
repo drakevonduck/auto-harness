@@ -1,0 +1,17 @@
+schemaVersion: 1
+project:
+  id: broken-missing-artifact
+  name: Broken Missing Artifact
+  maturity: prototype
+  criticality: low
+modules:
+  core:
+    - kernel/base
+  management:
+    - product-lite
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []
+# product-lite requires: docs/product/problem-statement.md, docs/product/requirements.md,
+# docs/product/release-intent.md — none exist in this fixture project directory.
+# validate-required-artifacts.sh must fail.

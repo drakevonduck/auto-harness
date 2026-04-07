@@ -1,0 +1,18 @@
+schemaVersion: 2
+project:
+  id: broken-bad-schema
+  name: Broken Bad Schema
+  # maturity and criticality are intentionally missing
+modules:
+  core:
+    - kernel/base
+  unknownGroup:
+    - something
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []
+# validate-manifest.sh must fail with multiple errors:
+# - schemaVersion must be 1
+# - project.maturity is required
+# - project.criticality is required
+# - unknown module groups: unknownGroup

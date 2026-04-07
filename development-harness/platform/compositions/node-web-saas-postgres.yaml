@@ -18,6 +18,7 @@ modules:
   management:
     - product-lite
     - project-standard
+    - testing-standard
   agents:
     - base
     - claude-code

@@ -61,6 +61,7 @@ Product, project, and program governance overlays.
 * [Product Lite](profiles/management/product-lite/README.md)
 * [Project Standard](profiles/management/project-standard/README.md)
 * [Program Lite](profiles/management/program-lite/README.md)
+* [Testing Standard](profiles/management/testing-standard/README.md)
 
 ### Domains
 
@@ -86,6 +87,7 @@ other compliant clients. Install to `.agents/skills/` or `.claude/skills/`.
 
 * [harness-governance](skills/harness-governance/SKILL.md)
 * [harness-web3](skills/harness-web3/SKILL.md)
+* [harness-testing](skills/harness-testing/SKILL.md)
 
 ## Starter Compositions
 
@@ -125,6 +127,11 @@ Pre-built manifests for common project types. Copy the closest match to
 * [Workstream Map](templates/program/workstream-map.md)
 * [Stakeholder Report](templates/program/stakeholder-report.md)
 * [Governance Cadence](templates/program/governance-cadence.md)
+
+### Testing
+
+* [Test Strategy](templates/testing/test-strategy.md)
+* [Coverage Thresholds](templates/testing/coverage-thresholds.md)
 
 ### Architecture and Operations
 
