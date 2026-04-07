@@ -51,6 +51,12 @@ class TestValidateManifest < Minitest::Test
     assert_match(/✓/, out)
   end
 
+  def test_valid_testing_standard_passes
+    out, err, code = run_validator("validate-manifest.sh", fixture_manifest("valid-testing-standard"))
+    assert_equal 0, code, "Expected exit 0. stderr: #{err}"
+    assert_match(/✓/, out)
+  end
+
   def test_broken_bad_schema_fails
     out, err, code = run_validator("validate-manifest.sh", fixture_manifest("broken-bad-schema"))
     assert_equal 1, code, "Expected exit 1. stdout: #{out}"
@@ -73,6 +79,12 @@ end
 class TestValidateModuleGraph < Minitest::Test
   def test_valid_prototype_passes
     out, err, code = run_validator("validate-module-graph.sh", fixture_manifest("valid-prototype"))
+    assert_equal 0, code, "Expected exit 0. stderr: #{err}"
+    assert_match(/✓/, out)
+  end
+
+  def test_valid_testing_standard_passes
+    out, err, code = run_validator("validate-module-graph.sh", fixture_manifest("valid-testing-standard"))
     assert_equal 0, code, "Expected exit 0. stderr: #{err}"
     assert_match(/✓/, out)
   end
@@ -101,6 +113,16 @@ class TestValidateRequiredArtifacts < Minitest::Test
       fixture_project("valid-prototype")
     )
     assert_equal 0, code, "Expected exit 0. stderr: #{err}"
+    assert_match(/✓/, out)
+  end
+
+  def test_valid_testing_standard_with_testing_artifacts_passes
+    out, err, code = run_validator(
+      "validate-required-artifacts.sh",
+      fixture_manifest("valid-testing-standard"),
+      fixture_project("valid-testing-standard")
+    )
+    assert_equal 0, code, "Expected exit 0 — testing docs must be present. stderr: #{err}"
     assert_match(/✓/, out)
   end
 

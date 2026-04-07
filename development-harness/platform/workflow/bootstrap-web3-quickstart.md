@@ -149,10 +149,12 @@ Then install both harness-native skills — Web3 projects require both:
 # Cross-client (Claude Code, VS Code Copilot, Cursor, etc.)
 cp -r platform/skills/harness-governance .agents/skills/
 cp -r platform/skills/harness-web3 .agents/skills/
+cp -r platform/skills/harness-testing .agents/skills/      # testing-standard is active in this composition
 
 # Claude Code native path
 cp -r platform/skills/harness-governance .claude/skills/
 cp -r platform/skills/harness-web3 .claude/skills/
+cp -r platform/skills/harness-testing .claude/skills/      # testing-standard is active in this composition
 ```
 
 **The `harness-web3` skill is the governance reference for this project.** It contains:

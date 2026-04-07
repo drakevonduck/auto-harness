@@ -170,10 +170,12 @@ and other compliant clients. Harness-native skills live in `platform/skills/`.
 ```bash
 # Cross-client installation (works with all compliant clients)
 cp -r platform/skills/harness-governance .agents/skills/   # all projects
+cp -r platform/skills/harness-testing .agents/skills/      # testing-standard module active
 cp -r platform/skills/harness-web3 .agents/skills/         # Web3 projects only
 
 # Claude Code native path (Claude Code also scans .claude/skills/)
 cp -r platform/skills/harness-governance .claude/skills/
+cp -r platform/skills/harness-testing .claude/skills/      # testing-standard module active
 cp -r platform/skills/harness-web3 .claude/skills/         # Web3 projects only
 ```
 

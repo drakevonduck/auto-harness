@@ -240,6 +240,99 @@ visible in the PR status checks.
 
 ---
 
+## Wiring testing-standard Coverage Enforcement
+
+When `management/testing-standard` is active, the thresholds declared in
+`docs/testing/coverage-thresholds.md` must be enforced by the test runner in CI — the
+document alone is not enforcement. The harness validators check that the file exists and
+that any changes to it have a companion change-log entry or ADR. The test runner enforces
+the numbers.
+
+### Node / TypeScript (Jest or Vitest)
+
+Add `coverageThreshold` to your Jest config to fail CI when coverage drops below the
+declared values:
+
+```javascript
+// jest.config.js (or jest.config.ts)
+module.exports = {
+  coverageThreshold: {
+    global: {
+      lines: 80,
+      branches: 75,
+      functions: 80,
+      statements: 80,
+    },
+  },
+};
+```
+
+Run with coverage in the CI stack job:
+
+```yaml
+  stack:
+    name: Stack Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --coverage       # fails if thresholds not met
+```
+
+Vitest uses the same `thresholds` key under `coverage` in `vitest.config.ts`:
+
+```typescript
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    coverage: {
+      thresholds: { lines: 80, branches: 75, functions: 80, statements: 80 },
+    },
+  },
+});
+```
+
+### Python (pytest + pytest-cov)
+
+Add `--cov-fail-under` to fail CI when coverage drops below the declared value:
+
+```yaml
+  stack:
+    name: Stack Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: pytest --cov=src --cov-fail-under=80   # fails if threshold not met
+```
+
+Or declare the threshold in `pyproject.toml` to keep it out of the workflow file:
+
+```toml
+# pyproject.toml
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-fail-under=80"
+```
+
+### Keeping thresholds in sync
+
+`docs/testing/coverage-thresholds.md` is the human-readable declaration. The framework
+config (`jest.config.js`, `pyproject.toml`) is the enforcement. When you change one, change
+the other in the same PR. The `testing-standard` companion rule will fire if you modify
+`coverage-thresholds.md` without a change-log entry or ADR — but it will not catch the
+reverse (changing the framework config without updating the doc). Keep them in sync manually.
+
+---
+
 ## Harness Self-Tests in CI
 
 If you are developing the platform itself (or vendoring it and want regression coverage),

@@ -1,0 +1,20 @@
+schemaVersion: 1
+project:
+  id: valid-testing-standard
+  name: Valid Testing Standard
+  maturity: mvp
+  criticality: medium
+modules:
+  core:
+    - kernel/base
+  delivery:
+    - prototype
+  management:
+    - product-lite
+    - project-standard
+    - testing-standard
+  agents:
+    - base
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

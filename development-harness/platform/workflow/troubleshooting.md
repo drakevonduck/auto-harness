@@ -8,7 +8,7 @@ This document maps every known validator failure mode to its cause and fix.
 
 All validators print a single result line:
 
-```
+```text
 ✓ [description]         # exit 0 — passed
 ✗ [description]         # exit 1 — failed
   - [specific error]    # one line per issue
@@ -16,7 +16,7 @@ All validators print a single result line:
 
 Validators exit 0 on pass, 1 on failure. A disabled validator prints:
 
-```
+```text
 ✓ [name] validation disabled by manifest override
 ```
 
@@ -91,13 +91,14 @@ modules:
 A module is declared in the manifest but no `module.yaml` file exists at the expected path.
 
 Common causes:
+
 - Typo in the module name (case-sensitive, kebab-case)
 - Module doesn't exist in this platform version
 - Platform root is pointed at the wrong directory
 
-```
+```bash
 # Error:
-Missing module definition for management:discovery-intake at /path/to/platform/profiles/management/discovery-intake/module.yaml
+# Missing module definition for management:discovery-intake at /path/to/platform/profiles/management/discovery-intake/module.yaml
 
 # Fix: check available modules
 ls platform/profiles/management/
@@ -111,9 +112,9 @@ ls platform/profiles/management/
 **`X depends on missing module Y`**
 Module `X` declares `dependsOn: [Y]` but module `Y` is not in the manifest.
 
-```
+```bash
 # Error:
-program-lite depends on missing module project-standard
+# program-lite depends on missing module project-standard
 
 # Fix: add the dependency to the manifest
 modules:
@@ -123,6 +124,7 @@ modules:
 ```
 
 Common dependencies to remember:
+
 - `program-lite` → requires `project-standard`
 - `claude-code` agent → requires `base` agent
 - `supabase` domain → requires `relational-postgres`
@@ -133,7 +135,7 @@ Common dependencies to remember:
 **`X conflicts with active module Y`**
 Two mutually exclusive modules are both declared.
 
-```
+```text
 # Error:
 prototype conflicts with active module production-saas
 
@@ -143,6 +145,7 @@ prototype conflicts with active module production-saas
 ```
 
 Known conflicts:
+
 - `prototype` ↔ `production-saas`
 - `node-typescript` ↔ `python`
 
@@ -151,7 +154,7 @@ Known conflicts:
 **`X resolved from category but declares type Y`**
 A module's `type:` field doesn't match the category it was placed in.
 
-```
+```text
 # Error:
 my-module resolved from stacks but declares type management
 
@@ -168,7 +171,7 @@ my-module resolved from stacks but declares type management
 **`missing docs/product/requirements.md`** (or any other path)
 The file declared as a required artifact doesn't exist at that path in the project root.
 
-```
+```bash
 # Fix: create the file using the template
 cp platform/templates/product/requirements.md docs/product/requirements.md
 # Then fill in the [[PLACEHOLDER_NAME]] fields
@@ -237,7 +240,7 @@ For the full list, read each active module's `module.yaml` `companionRules` sect
 A file matching a companion rule's `triggerPaths` was changed in this PR, but none of the
 files in `requiredAny` were also changed.
 
-```
+```text
 # Error example:
   - product-lite: Requirements changes during development must be reflected in project change-log or a new ADR
     required change matching ^docs/project/change-log\.md$
@@ -255,6 +258,7 @@ by touching the file in a previous commit — it must be in this PR's diff.
 
 **Companion validation shows "No changed files detected"**
 The validator found no files changed relative to the base branch. This happens when:
+
 - Running against a clean branch with no commits ahead of main
 - The base branch argument is wrong
 
@@ -289,12 +293,13 @@ are enforced. Add the required companion file or document the rationale in a new
 **`[[PLACEHOLDER_NAME]] found in docs/product/requirements.md:5`**
 A template token was not replaced when the file was filled in.
 
-```
+```bash
 # Fix: open the file and replace the token with real content
 # The error includes the file path and line number
 ```
 
 Common placeholder patterns:
+
 - `[[OWNER]]` → replace with a GitHub handle or team name
 - `[[DATE]]` / `YYYY-MM-DD` → replace with the actual date
 - `[[PROJECT_NAME]]` → replace with the project name
@@ -305,6 +310,71 @@ If you want to intentionally leave a placeholder (not recommended), add the file
 
 ---
 
+## testing-standard Module Errors
+
+### `✗ Required artifact validation failed: missing docs/testing/test-strategy.md`
+
+The `testing-standard` management module requires this file.
+
+```bash
+mkdir -p docs/testing
+cp platform/templates/testing/test-strategy.md docs/testing/test-strategy.md
+```
+
+Open the file and fill in:
+
+- Which pyramid layers are active (unit, integration, E2E)
+- Which test framework is in use
+- What is enforced in CI vs. deferred to manual review
+
+---
+
+### `✗ Required artifact validation failed: missing docs/testing/coverage-thresholds.md`
+
+```bash
+cp platform/templates/testing/coverage-thresholds.md docs/testing/coverage-thresholds.md
+```
+
+Fill in the threshold percentages, then wire them into the framework config (Jest
+`coverageThreshold`, pytest `--cov-fail-under`) so CI enforces them. The document alone
+is not enforcement — the framework config is.
+
+---
+
+### Coverage threshold companion rule fires unexpectedly
+
+```text
+testing-standard: Coverage threshold changes require a change-log entry or ADR
+```
+
+This fires when `docs/testing/coverage-thresholds.md` is modified without a companion
+`docs/project/change-log.md` or `docs/adr/ADR-*.md` in the same PR.
+
+Thresholds are architectural commitments. Changing them requires a documented rationale.
+
+```bash
+# Fix: add one of these to your PR
+# Option A: update the change log
+echo "Changed unit coverage threshold from 80% to 75% — reason: ..." >> docs/project/change-log.md
+
+# Option B: create an ADR
+cp platform/templates/adr.md docs/adr/ADR-XXXX-coverage-threshold-change.md
+```
+
+---
+
+### Prototype delivery + testing-standard: when to disable enforcement
+
+If `delivery/prototype` is active alongside `testing-standard`, the harness won't prevent
+you from having lower or zero thresholds. But validators will still check for the
+existence of `docs/testing/test-strategy.md` and `docs/testing/coverage-thresholds.md`.
+
+For pure prototype projects that genuinely don't need testing governance, omit
+`testing-standard` from the manifest entirely. Don't activate it and then disable all
+its validators — that creates governance debt without benefit.
+
+---
+
 ## validate-agent-pack.sh
 
 ### `✗ Agent pack validation failed`
@@ -312,7 +382,7 @@ If you want to intentionally leave a placeholder (not recommended), add the file
 **`missing AGENTS.md`**
 The cross-agent contract file doesn't exist at the project root.
 
-```
+```bash
 # Fix: create AGENTS.md
 # Reference: platform/examples/sample-projects/node-web-saas-postgres/AGENTS.md
 # Or use the agents/base compiled fragments as a starting point
@@ -323,7 +393,7 @@ The cross-agent contract file doesn't exist at the project root.
 **`missing .claude/settings.json`** (when claude-code agent is active)
 The Claude Code configuration file doesn't exist.
 
-```
+```bash
 # Fix: create .claude/settings.json
 # Reference: platform/examples/sample-projects/node-web-saas-postgres/.claude/settings.json
 # Or start from the agents/claude-code compiled fragments
@@ -335,7 +405,7 @@ The Claude Code configuration file doesn't exist.
 
 ### Validator exits with a Ruby error
 
-```
+```text
 /path/to/harness_registry.rb:X: syntax error...
 ```
 
@@ -345,7 +415,7 @@ This is a bug in the platform library, not your project. Report it with the full
 
 ### "Permission denied" running a validator
 
-```
+```text
 bash: platform/validators/validate-manifest.sh: Permission denied
 ```
 
@@ -383,7 +453,7 @@ PLATFORM=development-harness/platform
 bash $PLATFORM/validators/validate-manifest.sh harness.manifest.yaml
 bash $PLATFORM/validators/validate-module-graph.sh harness.manifest.yaml
 bash $PLATFORM/validators/validate-required-artifacts.sh harness.manifest.yaml .
-bash $PLATFORM/validators/validate-placeholders.sh harness.manifest.yaml .
+bash $PLATFORM/validators/validate-placeholders.sh .
 bash $PLATFORM/validators/validate-agent-pack.sh harness.manifest.yaml .
 # Companion validator requires a base branch — skip locally unless comparing branches
 ```
@@ -393,7 +463,7 @@ bash $PLATFORM/validators/validate-agent-pack.sh harness.manifest.yaml .
 ## Reference
 
 | Resource | Path |
-|----------|------|
+| -------- | ---- |
 | Bootstrap quickstart | `platform/workflow/bootstrap-quickstart.md` |
 | CI integration guide | `platform/workflow/ci-integration.md` |
 | Validator source | `platform/validators/` |

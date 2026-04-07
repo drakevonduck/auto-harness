@@ -56,6 +56,16 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | `[[PERSONA_NAME]]` | Personas template | Persona name (e.g., `Alex — Power User`) |
 | `[[IN_SCOPE_ITEM_1]]` | Scope plan | Specific deliverable in scope |
 | `[[OUT_OF_SCOPE_ITEM_1]]` | Scope plan | Specific item explicitly not in scope |
+| `[[UNIT_LINE_PCT]]` | Coverage thresholds | Minimum unit test line coverage (e.g., `80`) |
+| `[[UNIT_BRANCH_PCT]]` | Coverage thresholds | Minimum unit test branch coverage (e.g., `75`) |
+| `[[UNIT_FUNCTION_PCT]]` | Coverage thresholds | Minimum unit test function coverage (e.g., `80`) |
+| `[[UNIT_CMD]]` | Test strategy, test plan | Command to run unit tests |
+| `[[INTEGRATION_CMD]]` | Test strategy, test plan | Command to run integration tests |
+| `[[E2E_CMD]]` | Test strategy, test plan | Command to run E2E tests |
+| `[[FLAKY_TRIAGE_SLA]]` | Test strategy | Time to triage a flaky test (e.g., `48 hours`) |
+| `[[MILESTONE_OR_RELEASE_NAME]]` | Test plan | Name of the release or milestone being tested |
+| `[[SEED_COMMAND]]` | Test plan | Command to seed the test database |
+| `[[RESTORATION_DEADLINE]]` | Coverage thresholds | Deadline for restoring a lowered threshold |
 
 ---
 
@@ -77,6 +87,9 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | Workstream map | `management/program-lite` | `templates/program/workstream-map.md` |
 | Stakeholder report | `management/program-lite` | `templates/program/stakeholder-report.md` |
 | Governance cadence | `management/program-lite` | `templates/program/governance-cadence.md` |
+| Test strategy | `management/testing-standard` | `templates/testing/test-strategy.md` |
+| Coverage thresholds | `management/testing-standard` | `templates/testing/coverage-thresholds.md` |
+| Test plan | `management/testing-standard` (optional) | `templates/testing/test-plan.md` |
 | Architecture overview | All production modules | `templates/architecture-overview.md` |
 | ADR | All modules with arch decisions | `templates/adr.md` |
 | Release checklist | `delivery/production-saas` | `templates/release-checklist.md` |

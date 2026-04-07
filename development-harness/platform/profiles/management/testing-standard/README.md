@@ -44,6 +44,7 @@ This is the compiled fragment governance floor for AI agents operating on projec
 `testing-standard` active.
 
 **Agents must not:**
+
 - Write or modify code that reduces coverage below declared thresholds without flagging it
 - Skip writing tests when implementing a new feature or fixing a bug, except in prototype delivery mode
 - Remove or comment out tests without a rationale in the PR description
@@ -51,6 +52,7 @@ This is the compiled fragment governance floor for AI agents operating on projec
 - Lower coverage thresholds without human approval and a companion change-log entry
 
 **Agents must:**
+
 - Write tests when adding a new function, class, or API endpoint
 - Verify test coverage before declaring an implementation task complete
 - Run the test suite before requesting human review
@@ -121,12 +123,28 @@ to `delivery/production-saas`, update `coverage-thresholds.md` to reflect the ne
 
 ---
 
+## Sensitive Path Patterns
+
+The `testing-standard` module declares sensitive paths for both Node/TypeScript and Python
+test configuration files (`jest.config`, `vitest.config`, `pytest.ini`, `pyproject.toml`,
+`setup.cfg`). This is intentional — the module is stack-agnostic.
+
+In practice, only the patterns relevant to your stack will ever match. A Node project
+will never have `pytest.ini`; a Python project will never have `vitest.config`. The union
+of patterns means the module works correctly regardless of which stack is active — no
+extra configuration needed.
+
+If your project has both stacks (rare), all patterns apply.
+
+---
+
 ## How This Integrates with CI
 
 Coverage enforcement belongs in CI, not just in the test strategy document. After declaring
 thresholds in `docs/testing/coverage-thresholds.md`, wire them into the CI tool:
 
 **Jest (Node/TypeScript):**
+
 ```json
 // jest.config.js
 coverageThreshold: {
@@ -135,6 +153,7 @@ coverageThreshold: {
 ```
 
 **Pytest (Python):**
+
 ```ini
 # pytest.ini or pyproject.toml
 [tool.pytest.ini_options]

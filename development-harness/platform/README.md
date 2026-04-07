@@ -42,7 +42,7 @@ platform/
 ├── core/           # Kernel doctrine, trust model, lifecycle controls, schemas
 ├── profiles/       # Stack, architecture, data, delivery, management, domain overlays
 ├── agents/         # AI-tool operating packs: base, claude-code, generic-llm
-├── skills/         # Harness-native Agent Skills: harness-governance, harness-web3
+├── skills/         # Harness-native Agent Skills: harness-governance, harness-testing, harness-web3
 ├── templates/      # Artifact skeletons — see templates/README.md for placeholder reference
 ├── validators/     # validate-*.sh scripts + Ruby harness_registry library
 ├── compositions/   # Starter manifests for common project types
