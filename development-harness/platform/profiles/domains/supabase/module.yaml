@@ -42,4 +42,4 @@ agentAdapters:
 compiledFragments:
   - platform/profiles/domains/supabase/README.md
 recommendedSkills:
-  - supabase-postgres-best-practices
+  - supabase   # clawhub install supabase — database ops, vector search, storage

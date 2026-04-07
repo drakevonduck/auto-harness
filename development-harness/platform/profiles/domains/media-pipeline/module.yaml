@@ -36,3 +36,7 @@ agentAdapters:
   - platform/agents/base
 compiledFragments:
   - platform/profiles/domains/media-pipeline/README.md
+recommendedSkills:
+  # clawhub install <slug>
+  - ffmpeg-master   # video and audio processing — use when pipeline includes format conversion or transcoding
+  - mediaproc       # process media files in a locked-down SSH container; suited for isolated batch jobs

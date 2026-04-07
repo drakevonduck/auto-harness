@@ -1,12 +1,107 @@
 # Stack Overlay: Node.js / TypeScript
 
-This overlay activates Node- and TypeScript-specific assumptions only when composed.
+This overlay activates Node.js and TypeScript-specific interpreter, dependency, and CI
+expectations only when composed. It supports multiple package managers (npm, pnpm, yarn)
+without forcing a single choice. Framework guidance belongs in architecture or domain
+overlays — this module owns the runtime and toolchain layer only.
 
-It owns:
+---
 
-- runtime pinning and lockfile expectations
-- package-manager behavior
-- typecheck, lint, test, and build command expectations
-- dependency-review sensitivity
+## What This Overlay Governs
 
-It does not own architecture examples such as web apps or Next.js. Those belong in architecture or domain overlays.
+**Sensitive paths:** `package.json`, `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+`tsconfig.*`, `.nvmrc`
+
+Changes to any of these paths trigger a companion rule requiring an ADR or architecture
+overview update. This enforces the principle that runtime and dependency changes are
+intentional decisions, not unreviewed drift.
+
+**Optional artifacts:** `package.json`, `tsconfig.json`, `.nvmrc`, `.github/workflows/stack.yml`
+These are optional because not every project needs all of them at declaration time.
+The companion rule fires regardless — all lockfile and config changes are treated as
+equivalent governance triggers.
+
+---
+
+## Runtime Pinning
+
+Pin the Node.js version using `.nvmrc` or the `engines` field in `package.json`. Both
+are acceptable; pick one and be consistent:
+
+- `.nvmrc` — simple file containing the version string (e.g., `22.11.0`)
+- `package.json` `engines` field — `{ "engines": { "node": ">=22.0.0" } }`
+
+CI must match the pinned version. A mismatch between local development and CI is the most
+common source of "works on my machine" failures.
+
+---
+
+## Package Manager and Lockfile
+
+The overlay is neutral on package manager. What matters is that the approach is consistent
+and the lock file is committed:
+
+- Commit the lock file (`package-lock.json`, `pnpm-lock.yaml`, or `yarn.lock`)
+- Treat lock file changes as supply-chain events requiring review
+- Do not mix package managers across a single project
+- If switching package managers, document the decision in an ADR
+
+Lock file changes that are not accompanied by an intentional dependency decision (e.g.,
+introduced by an agent auto-installing something) should be flagged in code review.
+
+---
+
+## TypeScript Configuration
+
+The overlay does not prescribe a `tsconfig.json` preset. Common governance expectations:
+
+- `strict: true` is the recommended default — weaker configs require justification in an ADR
+- `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` are worth enabling for
+  production services; document the choice
+- Path aliases (`@/`, `~/`) are common in web projects — ensure they are consistent across
+  `tsconfig.json`, bundler config, and Jest/Vitest config
+
+---
+
+## CI Expectations
+
+A Node/TypeScript project typically needs in CI:
+
+- Node.js setup matching the pinned version
+- Dependency installation (`npm ci`, `pnpm install --frozen-lockfile`, `yarn install --immutable`)
+- Type checking (`tsc --noEmit`)
+- Linting (`eslint`)
+- Tests (`jest`, `vitest`, or similar)
+- Build verification (`tsc`, `next build`, `vite build`)
+
+The stack overlay does not configure CI directly — that lives in `.github/workflows/`. The
+`platform/workflow/ci-integration.md` guide shows how to combine harness checks with stack
+checks in a single workflow.
+
+---
+
+## Recommended Skills
+
+Install these in your AI tool based on your delivery target:
+
+- `vercel-plugin:nextjs` — when deploying a Next.js app to Vercel
+- `vercel-plugin:vercel-cli` — for any project deploying to Vercel (env vars, previews, domains)
+- `supabase-postgres-best-practices` — when using Supabase as the data layer
+
+See `platform/workflow/skills-and-agents.md` for installation guidance and the full mapping.
+
+---
+
+## Conflicts with `python`
+
+A project can only use one primary language stack. Node/TypeScript and Python cannot coexist
+in the same manifest. If the system genuinely uses both, each surface should be a separate
+service with its own manifest.
+
+---
+
+## Review Gate
+
+Dependency installation remains a Tier 4 action. Agents may propose dependency changes and
+update lock files locally, but `npm install`, `pnpm add`, or `yarn add` against any shared or
+production environment requires human authorization.

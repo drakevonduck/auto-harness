@@ -15,10 +15,10 @@ Layer 1 — Kernel doctrine + compiled fragments
   Contents: trust tier model, lifecycle controls, companion rules, module READMEs
   Agent reads these at session start via AGENTS.md or CLAUDE.md shims
 
-Layer 2 — External skills
-  Provided by: developer installs skills in their AI tool (Claude Code, Cursor, etc.)
+Layer 2 — External skills (OpenClaw / ClawHub)
+  Provided by: developer installs skills via `clawhub install <slug>`
   Contents: vendor-specific APIs, deployment patterns, library best practices
-  Examples: vercel-plugin:nextjs, supabase-postgres-best-practices, openlaw:dune-mcp
+  Examples: supabase, next-best-practices, lb-vercel-skill, ffmpeg-master
 
 Layer 3 — Project contract
   Provided by: project's own AGENTS.md and CLAUDE.md
@@ -33,9 +33,36 @@ Layer 1 without Layer 2 gets a well-governed agent that guesses at framework API
 
 ---
 
+## Skill Ecosystem: OpenClaw and ClawHub
+
+Skills in this harness reference the **OpenClaw / ClawHub** ecosystem. OpenClaw is a
+locally-running AI assistant; ClawHub is its public skills registry.
+
+**Curated skill directory:** `https://github.com/unclenate/awesome-openclaw-skills`
+
+This repository is a curated subset of the full ClawHub registry (~13,700 skills), filtered
+for quality, security, and relevance. Skills referenced in harness module declarations are
+drawn from this curated list unless explicitly noted otherwise.
+
+**Installation:**
+
+```bash
+# Install a skill by slug
+clawhub install <skill-slug>
+
+# Or copy manually
+cp -r <skill-folder> ~/.openclaw/skills/     # global
+cp -r <skill-folder> <project>/skills/       # workspace (takes priority)
+```
+
+Skills can also be installed by pasting a skill's GitHub repository URL directly into the
+OpenClaw chat — the assistant will handle setup automatically.
+
+---
+
 ## `recommendedSkills` in module.yaml
 
-Each module can declare `recommendedSkills` — a list of external skill IDs that provide
+Each module can declare `recommendedSkills` — a list of ClawHub skill slugs that provide
 domain-specific knowledge relevant to that module. This field is:
 
 - **Optional.** Modules with no relevant external skills omit it.
@@ -46,62 +73,74 @@ Example from `domains/supabase/module.yaml`:
 
 ```yaml
 recommendedSkills:
-  - supabase-postgres-best-practices
+  - supabase
 ```
 
-The skill ID is the identifier used when installing the skill in your AI tool. For Claude Code,
-this maps to a skill installed via the Claude Code skill registry. For other runtimes, use the
-equivalent skill ID in that runtime's registry.
+The slug matches the ClawHub registry identifier — pass it directly to `clawhub install`.
 
 ---
 
 ## Skill Installation by Module
 
-The table below maps active modules to skills worth installing. Skills marked **required** are
-effectively mandatory for correct agent behavior in that domain — omitting them means the agent
-will rely on stale training data for critical APIs.
+Skills marked **required** are effectively mandatory for correct agent behavior in that domain.
+All slugs can be verified in `https://github.com/unclenate/awesome-openclaw-skills`.
 
-| Active module | Skill to install | Priority | Purpose |
-| ------------- | ---------------- | -------- | ------- |
-| `stacks/node-typescript` + Vercel delivery | `vercel-plugin:nextjs` | Recommended | Next.js routing, rendering, deployment |
-| Any project deploying to Vercel | `vercel-plugin:vercel-cli` | Recommended | CLI, env vars, preview deployments |
-| `domains/supabase` | `supabase-postgres-best-practices` | Recommended | RLS policies, auth patterns, migrations |
-| `stacks/python` + Supabase | `supabase-postgres-best-practices` | Recommended | Same as above, Python client usage |
-| `domains/web3` | `openlaw:skill-vetter` | **Required first** | Audits other skills before installation |
-| `domains/web3` | `openlaw:goplus-agent-guard` | **Required** | Pre-execution threat blocking |
-| `domains/web3` | `openlaw:mist-track` | **Required** (analytics) | AML compliance, address risk classification |
-| `domains/web3` | `openlaw:dune-mcp` | Recommended | On-chain data queries via Dune MCP server |
-| `domains/web3` | `openlaw:nansen` | Recommended | Wallet and token analytics |
-| `domains/web3` (write-capable) | `openlaw:clawnch` | Optional | ERC-20 deployment on Base |
-| `domains/web3` (write-capable) | `openlaw:okx-onchain-os` | Optional | Multi-chain wallet/transaction surface |
+| Active module | Slug | Priority | Purpose |
+| ------------- | ---- | -------- | ------- |
+| `stacks/node-typescript` (Next.js) | `next-best-practices` | Recommended | File conventions, RSC boundaries, data patterns, async APIs |
+| `stacks/node-typescript` (Next.js 16+) | `next-cache-components` | Recommended | PPR, `use cache` directive, `cacheLife`, `cacheTag` |
+| `stacks/node-typescript` (Vercel deploy) | `lb-vercel-skill` | Recommended | Vercel CLI — projects, deployments, env vars, domains |
+| `stacks/node-typescript` (React perf) | `react-perf` | Optional | React and Next.js performance optimization patterns |
+| `stacks/node-typescript` + Supabase | `supabase` | Recommended | Supabase database ops, vector search, storage |
+| `stacks/python` + Supabase | `supabase` | Recommended | Same — Python Supabase client usage |
+| `domains/supabase` | `supabase` | Recommended | Supabase database ops, vector search, storage |
+| `data/relational-postgres` | `postgres-perf` | Optional | PostgreSQL performance optimization and best practices |
+| `domains/media-pipeline` | `ffmpeg-master` | Recommended | Video and audio processing tasks |
+| `domains/media-pipeline` | `mediaproc` | Optional | Process media files in a locked-down SSH container |
+| `domains/web3` | See Web3 section below | — | Not in curated list — see full registry |
 
 ---
 
-## Web3 Skills — Security
+## Web3 Skills
 
-Web3 agent skills carry elevated risk because many are early experimental releases.
+Web3 skills are **not included in the curated awesome-openclaw-skills list** — they were
+intentionally filtered out due to the volume of low-quality and spam entries in that category
+of the ClawHub registry.
 
-**Security requirements before installing any Web3 skill:**
+Web3 skills are available directly from the full ClawHub registry at `clawskills.sh`.
 
-1. Install `openlaw:skill-vetter` first — it audits other skills for vulnerabilities before
-   you install them. Do not skip this step.
+**Security requirements before installing any Web3 skill from the full registry:**
 
-2. Test all Web3 skills in an isolated environment before connecting to any live wallet, contract,
-   or API key with production access.
+1. Install a skill vetter first. The curated list includes `azhua-skill-vetter`
+   (`clawhub install azhua-skill-vetter`) — a security-first skill vetting tool for AI agents.
+   Run it against any Web3 skill before activation.
 
-3. Skills that touch transaction signing (wallet skills, contract deployment skills) must be
-   reviewed against the trust tier model in `platform/core/kernel/base/trust-model.md`.
-   Transaction signing is a Tier 5 action — irreversible, permanent consequences.
+2. Test all Web3 skills in an isolated environment before connecting to any live wallet,
+   contract, or API key with production access.
 
-4. Install `openlaw:goplus-agent-guard` before enabling any write capability. It provides
-   real-time threat blocking and can abort dangerous operations before execution.
+3. Skills that touch transaction signing must be reviewed against the trust tier model
+   in `platform/core/kernel/base/trust-model.md`. Transaction signing is Tier 5 —
+   irreversible, permanent consequences.
 
-5. Most OpenClaw Web3 skills are in early experimental versions and **may contain unknown
+4. Install a pre-execution threat blocker before enabling any write capability. GoPlus
+   AgentGuard (`goplus-agent-guard` on ClawHub) provides real-time threat blocking.
+
+5. Most Web3 registry entries are in early experimental versions and **may contain unknown
    vulnerabilities**. Treat them as untrusted third-party code until audited.
 
-> Read-only analytics platforms (e.g., risk scoring, address analysis, chain data indexing)
-> do not require wallet or transaction skills. Install only MistTrack, Dune, and Nansen for
-> a read-only analytics stack. This is the recommended default for MVP.
+**Web3 skills referenced in `domains/web3/module.yaml`** (full ClawHub registry, not curated):
+
+| Slug | Purpose |
+| ---- | ------- |
+| `goplus-agent-guard` | Pre-execution security scanning and threat blocking |
+| `mist-track` | AML compliance and address risk classification |
+| `dune-mcp` | On-chain data queries via Dune MCP server |
+| `nansen` | Wallet and token analytics |
+| `clawnch` | ERC-20 deployment on Base (write-capable platforms only) |
+| `okx-onchain-os` | Multi-chain wallet/transaction surface (write-capable only) |
+
+> Read-only analytics platforms (risk scoring, address analysis, chain data indexing) need
+> only MistTrack and Dune. Wallet and deployment skills are not needed for MVP analytics.
 
 ---
 
@@ -111,9 +150,9 @@ After your manifest is valid and module graph is green:
 
 1. Read the `recommendedSkills` field in each active module's `module.yaml`.
 2. Cross-reference with the table above.
-3. For Web3 projects: always start with `skill-vetter` and `goplus-agent-guard`.
-4. Install skills in your AI tool using the skill ID listed.
-5. Confirm the skill is active by checking your tool's skill/plugin registry.
+3. For each slug: `clawhub install <slug>` or find it in the curated directory.
+4. For Web3 projects: run `azhua-skill-vetter` before installing anything from the full registry.
+5. Confirm the skill is active by checking your OpenClaw skill list.
 
 There is no validator for skill installation. It is a developer discipline step, not a CI gate.
 
@@ -139,11 +178,11 @@ These are complementary, not competing:
 
 | | `compiledFragments` | External skills |
 | - | ------------------- | --------------- |
-| Source | Harness platform docs | Vendor/ecosystem skill registries |
+| Source | Harness platform docs | ClawHub registry |
 | Content | Governance rules, module READMEs, trust model | API patterns, library usage, deployment config |
-| Installed by | Read at agent session start via AGENTS.md | Developer installs in AI tool |
+| Installed by | Read at agent session start via AGENTS.md | Developer installs via `clawhub install` |
 | Enforced | Yes — validator can check file existence | No — informational only |
-| Example | `platform/profiles/domains/supabase/README.md` | `supabase-postgres-best-practices` |
+| Example | `platform/profiles/domains/supabase/README.md` | `supabase` |
 
 A well-configured project uses both: compiled fragments for governance context, external skills
 for tool/API accuracy.
@@ -154,6 +193,7 @@ for tool/API accuracy.
 
 | Resource | Path |
 | -------- | ---- |
+| Curated skill directory | `https://github.com/unclenate/awesome-openclaw-skills` |
 | Trust tier model | `platform/core/kernel/base/trust-model.md` |
 | Module field reference | `platform/core/registry/module-types.md` |
 | Bootstrap quickstart | `platform/workflow/bootstrap-quickstart.md` |

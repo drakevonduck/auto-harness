@@ -43,8 +43,9 @@ agentAdapters:
 compiledFragments:
   - platform/profiles/stacks/node-typescript/README.md
 recommendedSkills:
-  # Install when delivery target is Vercel (web app or API service)
-  - vercel-plugin:nextjs          # Next.js deployment, routing, and rendering strategies
-  - vercel-plugin:vercel-cli      # CLI usage, env vars, project linking, preview deployments
-  # Install when using Supabase (redundant with domains/supabase if that module is active)
-  - supabase-postgres-best-practices
+  # clawhub install <slug>
+  - next-best-practices     # Next.js file conventions, RSC boundaries, data patterns, async APIs
+  - next-cache-components   # Next.js 16 PPR, use cache directive, cacheLife, cacheTag (if on Next.js 16+)
+  - lb-vercel-skill         # Vercel CLI — deployments, env vars, domains (install when deploying to Vercel)
+  - react-perf              # React and Next.js performance optimization patterns
+  - supabase                # Supabase database ops (install when using Supabase as data layer)

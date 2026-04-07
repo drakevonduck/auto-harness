@@ -151,17 +151,23 @@ Each module's `module.yaml` has a `recommendedSkills` field listing relevant ski
 
 Quick lookup by module:
 
-| Active module | Skill to install |
-| ------------- | ---------------- |
-| `stacks/node-typescript` + Vercel | `vercel-plugin:nextjs`, `vercel-plugin:vercel-cli` |
-| `domains/supabase` | `supabase-postgres-best-practices` |
-| `domains/web3` | `openlaw:skill-vetter` (first), `openlaw:goplus-agent-guard`, `openlaw:mist-track` |
-| `domains/web3` + data layer | `openlaw:dune-mcp`, `openlaw:nansen` |
+Skills are installed via `clawhub install <slug>`. All slugs are in the curated directory
+at `https://github.com/unclenate/awesome-openclaw-skills`.
 
-**Web3 projects:** Install `openlaw:skill-vetter` before any other Web3 skill. Web3 agent skills
-are early experimental releases and may contain vulnerabilities. Test in an isolated environment
-before connecting to any live wallet, contract, or production API key. See
-`platform/workflow/skills-and-agents.md` for the full security guidance.
+| Active module | Slug(s) to install |
+| ------------- | ------------------ |
+| `stacks/node-typescript` (Next.js) | `next-best-practices`, `next-cache-components` |
+| `stacks/node-typescript` (Vercel) | `lb-vercel-skill` |
+| `domains/supabase` or Supabase data layer | `supabase` |
+| `data/relational-postgres` | `postgres-perf` |
+| `domains/media-pipeline` | `ffmpeg-master`, `mediaproc` |
+| `domains/web3` | `azhua-skill-vetter` (first), then full-registry skills — see below |
+
+**Web3 projects:** Web3 skills are not in the curated list — they come from the full ClawHub
+registry. Always install `azhua-skill-vetter` first (`clawhub install azhua-skill-vetter`) and
+run it against any Web3 skill before activation. These are experimental releases that may
+contain vulnerabilities. Never connect to a live wallet or production API key without testing
+in an isolated environment first. See `platform/workflow/skills-and-agents.md §Web3`.
 
 Skills are installed in your AI tool (Claude Code skill registry, etc.). There is no CI gate
 for skill installation — it is a developer discipline step.

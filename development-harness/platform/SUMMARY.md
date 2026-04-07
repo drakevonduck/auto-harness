@@ -100,6 +100,7 @@
 * [Risk Register](templates/risk-register.md)
 * [Incident Response](templates/incident.md)
 * [Ownership Map](templates/ownership-map.md)
+* [Runbook Index](templates/ops/runbook-index.md)
 
 ### Web3
 
