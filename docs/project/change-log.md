@@ -9,6 +9,7 @@ It is not a git commit log — it captures *decisions and their rationale*, not 
 
 | Date | Type | Change | Reason | Owner | ADR/PRD |
 | ---- | ---- | ------ | ------ | ----- | ------- |
+| 2026-04-08 | Technical | Bootstrapped `AGENTS.md` as the workspace-instructions entrypoint | Keep one cross-tool source of truth for agent guidance and avoid duplicated Copilot-specific instructions | @unclenate | — |
 | 2026-04-07 | Scope | Restored PRDs as first-class record type | PRD process was lost in monolith-to-modular decomposition; product decisions had no structured rationale record | @unclenate | PRD-0001 |
 | 2026-04-07 | Scope | Added self-governance artifacts | Harness should eat its own dog food; declared modules but had no artifacts | @unclenate | ADR-0001 |
 | 2026-04-07 | Scope | Added product-lite module to manifest | Required for PRD companion rules and product artifact tracking | @unclenate | — |

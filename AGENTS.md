@@ -3,6 +3,57 @@
 ## Cross-Agent Operating Manual — Development Harness Framework
 
 This document governs all AI agent tooling used on this repository.
+It is also the workspace-instructions entrypoint for this repo; keep it as the single
+shared guidance file instead of creating a duplicate `.github/copilot-instructions.md`.
+
+---
+
+## Repository Shape
+
+This repository is a modular governance framework, not a deployable application service.
+Most work happens in:
+
+- `platform/core/kernel/base/` — kernel doctrine, trust model, and operating principles
+- `platform/profiles/**/module.yaml` and `platform/agents/**/module.yaml` — module contracts
+- `platform/validators/` — shell validators plus the shared Ruby registry and tests
+- `platform/templates/` and `platform/workflow/` — artifact templates and operating guides
+- `docs/` — the platform's own requirements, ADRs, PRDs, and project records
+
+Treat `legacy/` and `platform/validators/test/fixtures/` as historical or test data,
+not as the source of truth.
+
+---
+
+## Build and Test
+
+Run checks from the repository root. There is no app build or runtime server in this repo;
+verification means running the validator chain and Ruby tests:
+
+```bash
+bash platform/validators/validate-manifest.sh harness.manifest.yaml
+bash platform/validators/validate-module-graph.sh harness.manifest.yaml
+bash platform/validators/validate-required-artifacts.sh harness.manifest.yaml .
+bash platform/validators/validate-placeholders.sh .
+bash platform/validators/validate-agent-pack.sh harness.manifest.yaml .
+bash platform/validators/validate-companions.sh harness.manifest.yaml . main
+ruby -I platform/validators/lib platform/validators/test/test_harness_registry.rb
+ruby -I platform/validators/lib platform/validators/test/test_validators_integration.rb
+```
+
+For validator behavior, troubleshooting, and CI wiring, link to:
+`platform/validators/README.md`, `platform/workflow/troubleshooting.md`, and
+`platform/workflow/ci-integration.md`.
+
+---
+
+## Working Conventions
+
+- Follow **link, don't embed**: reference existing docs instead of duplicating long guidance
+- When changing modules, validators, templates, or workflows, update the nearby README,
+  `SUMMARY.md`, and any ADR/PRD/change-log artifact needed to keep governance current
+- Preserve trust-tier boundaries and companion rules; do not weaken them without explicit
+  human direction
+- Use `platform/examples/` for good examples; validator fixtures intentionally include broken cases
 
 ---
 
