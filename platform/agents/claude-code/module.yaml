@@ -24,6 +24,7 @@ companionRules:
     requiredAny:
       - ^AGENTS\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that tool-specific permissions still honor kernel trust boundaries.
 validators:
   - validate-agent-pack

@@ -23,6 +23,7 @@ companionRules:
     requiredAny:
       - ^docs/architecture/overview\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify backward compatibility and data-shape impact.
 validators:
   - validate-companions

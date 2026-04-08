@@ -21,19 +21,21 @@ sensitivePaths:
       - ^pyproject\.toml$
       - ^setup\.cfg$
 companionRules:
-  - description: Coverage threshold changes require a change-log entry or ADR — thresholds are architectural commitments
+  - description: Coverage threshold changes require a change-log entry, ADR, or PRD — thresholds are architectural commitments
     triggerPaths:
       - ^docs/testing/coverage-thresholds\.md$
     requiredAny:
       - ^docs/project/change-log\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that threshold changes are intentional and that the rationale is documented.
-  - description: Test strategy changes require a change-log entry — strategy shifts affect how all future tests are written
+  - description: Test strategy changes require a change-log entry, ADR, or PRD — strategy shifts affect how all future tests are written
     triggerPaths:
       - ^docs/testing/test-strategy\.md$
     requiredAny:
       - ^docs/project/change-log\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that strategy changes are consistent with current delivery posture and stack.
 validators:
   - validate-required-artifacts

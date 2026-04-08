@@ -110,6 +110,7 @@ Create each missing file using the templates in `platform/templates/`. The match
 | `docs/discovery/mvp-scope.md` | `platform/templates/discovery/mvp-scope.md` |
 | `docs/architecture/overview.md` | `platform/templates/architecture-overview.md` |
 | `docs/adr/ADR-0001-*.md` | `platform/templates/adr.md` |
+| `docs/requirements/PRD-0001-*.md` | `platform/templates/product/prd.md` |
 | `docs/security/risk-register.md` | `platform/templates/risk-register.md` |
 | `docs/ops/release-checklist.md` | `platform/templates/release-checklist.md` |
 | `docs/project/scope-plan.md` | `platform/templates/project/scope-plan.md` |

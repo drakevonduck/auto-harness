@@ -150,7 +150,7 @@ class TestCompanionRuleLogic < Minitest::Test
   # required: change-log.md OR any ADR file
   RULE = {
     "triggerPaths" => ["^docs/product/requirements\\.md$", "^docs/discovery/mvp-scope\\.md$"],
-    "requiredAny"  => ["^docs/project/change-log\\.md$", "^docs/adr/ADR-"]
+    "requiredAny"  => ["^docs/project/change-log\\.md$", "^docs/adr/ADR-", "^docs/requirements/PRD-"]
   }.freeze
 
   # Returns true if the rule passes (not triggered, or triggered and satisfied)
@@ -183,6 +183,14 @@ class TestCompanionRuleLogic < Minitest::Test
 
   def test_mvp_scope_with_adr_passes
     assert rule_passes?(["docs/discovery/mvp-scope.md", "docs/adr/ADR-0003-scope-change.md"])
+  end
+
+  def test_requirements_with_prd_passes
+    assert rule_passes?(["docs/product/requirements.md", "docs/requirements/PRD-0001-new-feature.md"])
+  end
+
+  def test_mvp_scope_with_prd_passes
+    assert rule_passes?(["docs/discovery/mvp-scope.md", "docs/requirements/PRD-0002-scope-pivot.md"])
   end
 
   def test_unrelated_file_not_triggered

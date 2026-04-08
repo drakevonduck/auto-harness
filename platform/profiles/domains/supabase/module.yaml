@@ -32,6 +32,7 @@ companionRules:
       - ^docs/security/risk-register\.md$
       - ^docs/adr/ADR-
       - ^docs/architecture/overview\.md$
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify auth, policy, and hosted-boundary implications.
 validators:
   - validate-companions

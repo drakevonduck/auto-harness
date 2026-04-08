@@ -32,6 +32,7 @@ companionRules:
     requiredAny:
       - ^docs/adr/ADR-
       - ^docs/architecture/overview\.md$
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that supply-chain and runtime impacts are explained, not just recorded.
 validators:
   - validate-module-graph

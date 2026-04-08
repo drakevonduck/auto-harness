@@ -156,13 +156,16 @@ Discovery does not end when engineering begins. Product direction changes during
 new information surfaces, constraints shift, scope adjusts.
 
 When requirements change after discovery:
+
 1. Update `docs/product/requirements.md` — change the priority tier, add/remove items
 2. Log the change in `docs/project/change-log.md` with: what changed, why, who decided
 3. If the change is architectural, create a new ADR
-4. If the MVP scope boundary shifts materially, update `docs/discovery/mvp-scope.md`
+4. If the change is a significant product decision, create a new PRD
+5. If the MVP scope boundary shifts materially, update `docs/discovery/mvp-scope.md`
 
-The companion rule in this module enforces step 2 and 3 in CI: a PR that changes
-`requirements.md` or `mvp-scope.md` without also touching `change-log.md` or an ADR will fail.
+The companion rule in this module enforces steps 2–4 in CI: a PR that changes
+`requirements.md` or `mvp-scope.md` without also touching `change-log.md`, an ADR,
+or a PRD will fail.
 
 ---
 
@@ -170,8 +173,9 @@ The companion rule in this module enforces step 2 and 3 in CI: a PR that changes
 
 The following legacy snippets are absorbed by this overlay and the enriched platform templates:
 
-- Original PRD generation prompt — intent absorbed into `intake-questionnaire.md`,
-  enriched `templates/product/requirements.md`, and this README
+- Original PRD generation prompt — the PRD process has been restored as a first-class
+  record type via `platform/templates/product/prd.md`, integrated into companion rules
+  alongside ADRs. Discovery artifacts feed PRDs just as they feed requirements.
 - Original ADR prompt — intent absorbed into `workflow/discovery-to-composition.md` §7
 
 The original monolith prompt is archived at `legacy/v1-monolith-prompt.txt`.

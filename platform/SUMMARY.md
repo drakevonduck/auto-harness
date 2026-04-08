@@ -118,6 +118,7 @@ Pre-built manifests for common project types. Copy the closest match to
 * [Personas](templates/product/personas.md)
 * [Requirements](templates/product/requirements.md)
 * [Release Intent](templates/product/release-intent.md)
+* [PRD](templates/product/prd.md)
 
 ### Project
 

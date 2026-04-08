@@ -32,6 +32,7 @@ companionRules:
     requiredAny:
       - ^docs/adr/ADR-
       - ^docs/architecture/overview\.md$
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify upgrade and packaging decisions are intentional and compatible with delivery posture.
 validators:
   - validate-module-graph

@@ -61,9 +61,10 @@ stale requirements lead to agents and engineers building the wrong thing.
 - Update `docs/product/requirements.md`
 - Log the change in `docs/project/change-log.md` (what changed, why, who decided)
 - Create an ADR if the change is architectural
+- Create a PRD if the change is a significant product decision (new feature, scope pivot, monetization change)
 
 The companion rule in this module enforces this in CI: a PR that changes `requirements.md`
-or `problem-statement.md` without also touching `change-log.md` or an ADR will fail.
+or `problem-statement.md` without also touching `change-log.md`, an ADR, or a PRD will fail.
 
 ---
 
@@ -113,6 +114,37 @@ that motivated them. When an architectural decision changes a requirement, updat
 
 ---
 
+## Connecting to PRDs
+
+When a product decision is significant enough to warrant its own rationale record —
+a new feature direction, a scope pivot, a monetization decision, or a user-experience
+strategy change — create a PRD in `docs/requirements/PRD-NNNN-slug.md`.
+
+PRDs are the product counterpart to ADRs. Where ADRs record *how* and *why* the system
+is built a certain way, PRDs record *what* and *why* the product includes or excludes
+specific capabilities. Together they form the longitudinal decision record for a project.
+
+**When to create a PRD instead of just updating requirements.md:**
+
+- The decision affects multiple requirements or user stories
+- The decision has alternatives that were considered and rejected
+- The decision will be referenced by future work as context
+- A stakeholder needs to review and approve the direction
+
+**When updating requirements.md is sufficient:**
+
+- Routine priority changes within established scope
+- Adding acceptance criteria to existing requirements
+- Minor scope adjustments within an accepted PRD's boundary
+
+PRDs reference requirements and personas. Requirements reference PRDs that drove them.
+When a PRD changes a requirement, update `requirements.md`, note the PRD that drove
+the change, and log in `change-log.md`.
+
+The PRD template is at `platform/templates/product/prd.md`.
+
+---
+
 ## Calibrating Depth by Stage
 
 | Delivery stage | Minimum viable product artifacts |
@@ -131,3 +163,8 @@ Do not accept prototype-depth artifacts for a production release.
 **`legacy/v1-monolith-prompt.txt`** contains the original monolith prompt, now superseded by this
 overlay's workflow, `platform/templates/product/requirements.md` (enriched), `personas.md` (new),
 and `platform/workflow/discovery-to-composition.md`. Retained as historical reference in `legacy/`.
+
+The original PRD (Product Requirements Document) process from the legacy harness has been
+restored as a first-class record type via `platform/templates/product/prd.md`. PRDs are now
+integrated into companion rules alongside ADRs, capturing the longitudinal product decision
+record that was previously lost in the modular decomposition.

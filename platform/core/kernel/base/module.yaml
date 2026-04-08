@@ -34,6 +34,7 @@ companionRules:
     requiredAny:
       - ^docs/adr/ADR-
       - ^docs/operating-principles\.md$
+      - ^docs/requirements/PRD-
     humanReview: Reviewers must verify that governance changes are intentional and not merely mechanical.
 validators:
   - validate-manifest

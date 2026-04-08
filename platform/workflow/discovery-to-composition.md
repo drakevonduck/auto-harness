@@ -260,9 +260,39 @@ ADRs for decisions already made should be status `accepted`. ADRs for decisions 
 should be status `proposed`.
 
 **Connecting ADRs to product context:**
+
 - Reference the relevant intake questionnaire section in the ADR's Context field
 - Reference linked PRD requirements in the ADR's Context if the decision was driven by a product constraint
 - Link ADRs from `docs/discovery/mvp-scope.md` — the scope boundary should reflect the architectural choices made
+
+---
+
+## Step 7b: Seed Early PRDs
+
+**Template:** `platform/templates/product/prd.md`
+
+PRDs are the product counterpart to ADRs. Where ADRs capture *how and why* the system is
+built a certain way, PRDs capture *what and why* the product includes or excludes specific
+capabilities. Together they form the longitudinal decision record for the project.
+
+**PRDs to create when the project has significant product decisions:**
+
+| Decision | Why record it |
+|----------|--------------|
+| Core user flow or feature set | Defines what the product actually does — referenced by all future scope decisions |
+| MVP feature boundary | Which capabilities are in v1 and which are deferred — prevents scope creep |
+| Monetization or pricing model (if applicable) | Affects feature prioritization, UX, and data model |
+| Target audience pivot | Changes who the product is for — cascades through personas, requirements, and success metrics |
+
+Create files as `docs/requirements/PRD-0001-core-feature-set.md`,
+`docs/requirements/PRD-0002-mvp-boundary.md`, etc.
+
+PRDs for decisions already made should be status `accepted`. PRDs for decisions still open
+should be status `proposed`.
+
+Not every project needs PRDs at inception. If product decisions are straightforward and
+captured adequately in `requirements.md`, defer PRD creation until a significant product
+decision arises during development.
 
 ---
 
@@ -317,13 +347,16 @@ Discovery does not end when engineering begins. Product direction changes during
 as new information surfaces, constraints shift, and scope adjusts.
 
 **When requirements change:**
+
 1. Update `docs/product/requirements.md` — adjust priority tier, add/remove items
 2. Log the change in `docs/project/change-log.md`: what changed, why, who decided
 3. If architectural: create a new ADR
-4. If MVP scope boundary shifts: update `docs/discovery/mvp-scope.md`
+4. If a significant product decision: create a new PRD
+5. If MVP scope boundary shifts: update `docs/discovery/mvp-scope.md`
 
 The `discovery-intake` module enforces this with a companion rule: a PR that changes
-`requirements.md` or `mvp-scope.md` without also touching `change-log.md` or an ADR will fail CI.
+`requirements.md` or `mvp-scope.md` without also touching `change-log.md`, an ADR, or a PRD
+will fail CI.
 
 **When architecture changes:**
 1. Update `docs/architecture/overview.md`
@@ -332,11 +365,14 @@ The `discovery-intake` module enforces this with a companion rule: a PR that cha
 4. If the change affects security posture, update `docs/security/risk-register.md`
 
 **When personas or problem framing change:**
-This is a significant product event. If who the product is for has changed:
-1. Update `docs/product/personas.md`
-2. Update `docs/product/problem-statement.md`
-3. Review and update `docs/product/requirements.md` — requirements derived from the old persona may no longer apply
-4. Log in `docs/project/change-log.md`
+This is a significant product event and should almost always warrant a PRD. If who the
+product is for has changed:
+
+1. Create a new PRD documenting the pivot: what changed, why, what was considered
+2. Update `docs/product/personas.md`
+3. Update `docs/product/problem-statement.md`
+4. Review and update `docs/product/requirements.md` — requirements derived from the old persona may no longer apply
+5. Log in `docs/project/change-log.md`
 
 ---
 
@@ -345,8 +381,9 @@ This is a significant product event. If who the product is for has changed:
 The following legacy snippets have been superseded by this workflow and the platform templates:
 
 **`Universal PRD Generation Prompt`** (original monolith prompt, now archived at `legacy/v1-monolith-prompt.txt`)
-Superseded by: `intake-questionnaire.md` (discovery), `requirements.md` (enriched template),
-`product-lite/README.md` (workflow guidance), and this document.
+The PRD process has been restored as a first-class record type. PRD template:
+`platform/templates/product/prd.md`. Seeding guidance: Step 7b of this workflow.
+Ongoing workflow: `product-lite/README.md` § Connecting to PRDs.
 
 **`dev.ADR.prompt`** (original ADR prompt, absorbed into platform)
 Superseded by: Step 7 of this workflow (ADR seeding), `templates/adr.md` (template),

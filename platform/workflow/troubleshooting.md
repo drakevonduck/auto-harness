@@ -221,14 +221,14 @@ the same branch satisfies the rule. A companion file touched in a separate PR do
 
 | Module | Trigger | Required companion |
 | ------ | ------- | ------------------ |
-| `product-lite` | `docs/product/requirements.md` | change-log or ADR |
-| `discovery-intake` | `docs/discovery/mvp-scope.md` | change-log or ADR |
+| `product-lite` | `docs/product/requirements.md` | change-log, ADR, or PRD |
+| `discovery-intake` | `docs/discovery/mvp-scope.md` | change-log, ADR, or PRD |
 | `project-standard` | `docs/project/scope-plan.md` | change-log |
 | `relational-postgres` | `migrations/` | `docs/database/migration-readiness.md` |
 | `domains/web3` | `contracts/`, `src/wallet/` | risk register or ADR |
 | `domains/web3` | `src/scoring/` | ADR |
 | `domains/web3` | `chain_config` | ADR |
-| `claude-code` agent | `CLAUDE.md`, `.claude/` | `AGENTS.md` or ADR |
+| `claude-code` agent | `CLAUDE.md`, `.claude/` | `AGENTS.md`, ADR, or PRD |
 
 For the full list, read each active module's `module.yaml` `companionRules` section.
 
@@ -242,13 +242,15 @@ files in `requiredAny` were also changed.
 
 ```text
 # Error example:
-  - product-lite: Requirements changes during development must be reflected in project change-log or a new ADR
+  - product-lite: Requirements changes during development must be reflected in project change-log, a new ADR, or a new PRD
     required change matching ^docs/project/change-log\.md$
     required change matching ^docs/adr/ADR-
+    required change matching ^docs/requirements/PRD-
 
 # Fix: include one of the required companion files in your PR
 # Option A: update docs/project/change-log.md
 # Option B: add a new docs/adr/ADR-XXXX-description.md
+# Option C: add a new docs/requirements/PRD-XXXX-description.md
 ```
 
 Companion rules exist because governance changes need a paper trail. The rule is not satisfied
@@ -344,11 +346,12 @@ is not enforcement — the framework config is.
 ### Coverage threshold companion rule fires unexpectedly
 
 ```text
-testing-standard: Coverage threshold changes require a change-log entry or ADR
+testing-standard: Coverage threshold changes require a change-log entry, ADR, or PRD
 ```
 
 This fires when `docs/testing/coverage-thresholds.md` is modified without a companion
-`docs/project/change-log.md` or `docs/adr/ADR-*.md` in the same PR.
+`docs/project/change-log.md`, `docs/adr/ADR-*.md`, or `docs/requirements/PRD-*.md` in
+the same PR.
 
 Thresholds are architectural commitments. Changing them requires a documented rationale.
 
@@ -359,6 +362,9 @@ echo "Changed unit coverage threshold from 80% to 75% — reason: ..." >> docs/p
 
 # Option B: create an ADR
 cp platform/templates/adr.md docs/adr/ADR-XXXX-coverage-threshold-change.md
+
+# Option C: create a PRD (if the threshold change is driven by a product decision)
+cp platform/templates/product/prd.md docs/requirements/PRD-XXXX-coverage-adjustment.md
 ```
 
 ---

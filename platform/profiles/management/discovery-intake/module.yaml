@@ -13,13 +13,14 @@ optionalArtifacts:
   - docs/discovery/starting-assets.md
 sensitivePaths: []
 companionRules:
-  - description: Requirements changes post-discovery must be reflected in project change-log or a new ADR
+  - description: Requirements changes post-discovery must be reflected in project change-log, a new ADR, or a new PRD
     triggerPaths:
       - ^docs/product/requirements\.md$
       - ^docs/discovery/mvp-scope\.md$
     requiredAny:
       - ^docs/project/change-log\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that scope changes are intentional and out-of-scope items are still explicitly named.
 validators:
   - validate-required-artifacts

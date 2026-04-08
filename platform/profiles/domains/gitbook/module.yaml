@@ -23,6 +23,7 @@ companionRules:
     requiredAny:
       - ^docs/project/change-log\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that the table of contents accurately reflects the current documentation structure and that no pages are orphaned or missing.
 validators:
   - validate-required-artifacts

@@ -66,6 +66,16 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | `[[MILESTONE_OR_RELEASE_NAME]]` | Test plan | Name of the release or milestone being tested |
 | `[[SEED_COMMAND]]` | Test plan | Command to seed the test database |
 | `[[RESTORATION_DEADLINE]]` | Coverage thresholds | Deadline for restoring a lowered threshold |
+| `[[PRD_TITLE]]` | PRD template | Short title for the product decision |
+| `[[PRD_OVERVIEW]]` | PRD template | 2-3 sentence summary of the decision and the problem it solves |
+| `[[USER_ACTION]]` | PRD template | Action in user story (e.g., `manage my subscription`) |
+| `[[USER_VALUE]]` | PRD template | Value in user story (e.g., `I can control my billing`) |
+| `[[TECHNICAL_CONSTRAINT]]` | PRD template | Technical constraint on the feature |
+| `[[METRIC]]` | PRD template | Name of the KPI |
+| `[[TARGET]]` | PRD template | Success metric target value |
+| `[[METHOD]]` | PRD template | How the success metric is measured |
+| `[[OPEN_QUESTION]]` | PRD template | Question to resolve before or during implementation |
+| `[[RELATED_DOCUMENT]]` | PRD template | Link to related ADR, PRD, design doc, or external reference |
 
 ---
 
@@ -80,6 +90,14 @@ is to flatten the directory when a template is the only file for its category:
 | `templates/risk-register.md` | `docs/security/risk-register.md` |
 | `templates/ownership-map.md` | `docs/ops/ownership-map.md` |
 | `templates/operating-principles.md` | `docs/operating-principles.md` |
+
+Numbered record types use the template as a starting point but are stored
+with their own naming convention:
+
+| Template path | Artifact destination |
+|--------------|---------------------|
+| `templates/adr.md` | `docs/adr/ADR-NNNN-slug.md` |
+| `templates/product/prd.md` | `docs/requirements/PRD-NNNN-slug.md` |
 
 Templates that share a category directory keep the subdirectory structure intact
 (e.g., `templates/ops/`, `templates/testing/`, `templates/web3/`).
@@ -97,6 +115,7 @@ Templates that share a category directory keep the subdirectory structure intact
 | Personas | `management/product-lite` (optional) | `templates/product/personas.md` |
 | Requirements | `management/product-lite` | `templates/product/requirements.md` |
 | Release intent | `management/product-lite` | `templates/product/release-intent.md` |
+| PRD | `management/product-lite` | `templates/product/prd.md` |
 | Scope plan | `management/project-standard` | `templates/project/scope-plan.md` |
 | Milestones | `management/project-standard` | `templates/project/milestones.md` |
 | Change log | `management/project-standard` | `templates/project/change-log.md` |

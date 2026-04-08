@@ -27,6 +27,7 @@ companionRules:
     requiredAny:
       - ^docs/architecture/overview\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify API contract or service-boundary changes are recorded at the correct level.
 validators:
   - validate-required-artifacts

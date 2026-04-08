@@ -5,6 +5,7 @@ Canonical records are the durable source of truth. Derivative records summarize,
 ## Canonical
 
 - ADRs
+- PRDs (Product Requirements Documents) — numbered records capturing product decisions, their rationale, and alternatives considered; the product counterpart to ADRs
 - product requirements and release intent artifacts
 - problem statement and persona definitions
 - project delivery logs and milestone records

@@ -15,13 +15,14 @@ optionalArtifacts:
   - docs/discovery/mvp-scope.md
 sensitivePaths: []
 companionRules:
-  - description: Requirements changes during development must be reflected in project change-log or a new ADR
+  - description: Requirements changes during development must be reflected in project change-log, a new ADR, or a new PRD
     triggerPaths:
       - ^docs/product/requirements\.md$
       - ^docs/product/problem-statement\.md$
     requiredAny:
       - ^docs/project/change-log\.md$
       - ^docs/adr/ADR-
+      - ^docs/requirements/PRD-
     humanReview: Reviewers verify that scope changes are intentional, out-of-scope items are still named, and persona assumptions are still valid.
 validators:
   - validate-required-artifacts
