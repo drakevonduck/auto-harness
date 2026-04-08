@@ -69,6 +69,23 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 
 ---
 
+## Template Naming Convention
+
+Template file names do not always match their artifact destination paths. The convention
+is to flatten the directory when a template is the only file for its category:
+
+| Template path | Artifact destination |
+|--------------|---------------------|
+| `templates/architecture-overview.md` | `docs/architecture/overview.md` |
+| `templates/risk-register.md` | `docs/security/risk-register.md` |
+| `templates/ownership-map.md` | `docs/ops/ownership-map.md` |
+| `templates/operating-principles.md` | `docs/operating-principles.md` |
+
+Templates that share a category directory keep the subdirectory structure intact
+(e.g., `templates/ops/`, `templates/testing/`, `templates/web3/`).
+
+---
+
 ## Template Directory Map
 
 | Template | Required By Module | Path |
@@ -79,7 +96,7 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | Problem statement | `management/product-lite` | `templates/product/problem-statement.md` |
 | Personas | `management/product-lite` (optional) | `templates/product/personas.md` |
 | Requirements | `management/product-lite` | `templates/product/requirements.md` |
-| Release intent | `delivery/production-saas` | `templates/product/release-intent.md` |
+| Release intent | `management/product-lite` | `templates/product/release-intent.md` |
 | Scope plan | `management/project-standard` | `templates/project/scope-plan.md` |
 | Milestones | `management/project-standard` | `templates/project/milestones.md` |
 | Change log | `management/project-standard` | `templates/project/change-log.md` |
@@ -90,6 +107,7 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | Test strategy | `management/testing-standard` | `templates/testing/test-strategy.md` |
 | Coverage thresholds | `management/testing-standard` | `templates/testing/coverage-thresholds.md` |
 | Test plan | `management/testing-standard` (optional) | `templates/testing/test-plan.md` |
+| Operating principles | `core/kernel/base` | `templates/operating-principles.md` |
 | Architecture overview | All production modules | `templates/architecture-overview.md` |
 | ADR | All modules with arch decisions | `templates/adr.md` |
 | Release checklist | `delivery/production-saas` | `templates/release-checklist.md` |
@@ -98,7 +116,10 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | Incident response | `delivery/production-saas` | `templates/incident.md` |
 | Ownership map | `delivery/production-saas` | `templates/ownership-map.md` |
 | Runbook index | `delivery/production-saas` | `templates/ops/runbook-index.md` |
+| Environment inventory | `delivery/production-saas` | `templates/ops/environment-inventory.md` |
+| Rollback checklist | `delivery/production-saas` | `templates/ops/rollback-checklist.md` |
 | Runbook (individual) | Populated from runbook index | `templates/ops/runbook-template.md` |
+| Migration readiness | `data/relational-postgres` | `templates/database/migration-readiness.md` |
 | Chain config | `domains/web3` | `templates/web3/chain-config.md` |
 | Contract registry | `domains/web3` (optional) | `templates/web3/contract-registry.md` |
 | Token strategy | `domains/web3` (optional) | `templates/web3/token-strategy.md` |

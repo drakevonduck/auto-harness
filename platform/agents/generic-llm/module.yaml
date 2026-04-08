@@ -7,8 +7,7 @@ dependsOn:
   - base
 conflictsWith: []
 requiredArtifacts: []
-optionalArtifacts:
-  - AGENTS.md
+optionalArtifacts: []
 sensitivePaths: []
 companionRules: []
 validators:

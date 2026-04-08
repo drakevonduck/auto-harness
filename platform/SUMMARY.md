@@ -11,6 +11,7 @@
 
 ## Core Governance
 
+* [Kernel Base](core/kernel/base/README.md)
 * [Doctrine](core/kernel/base/doctrine.md)
 * [Trust Model](core/kernel/base/trust-model.md)
 * [Lifecycle Controls](core/kernel/base/lifecycle-controls.md)
@@ -137,16 +138,26 @@ Pre-built manifests for common project types. Copy the closest match to
 * [Coverage Thresholds](templates/testing/coverage-thresholds.md)
 * [Test Plan](templates/testing/test-plan.md)
 
+### Governance
+
+* [Operating Principles](templates/operating-principles.md)
+
 ### Architecture and Operations
 
 * [Architecture Overview](templates/architecture-overview.md)
 * [ADR](templates/adr.md)
 * [Release Checklist](templates/release-checklist.md)
+* [Environment Inventory](templates/ops/environment-inventory.md)
+* [Rollback Checklist](templates/ops/rollback-checklist.md)
 * [Risk Register](templates/risk-register.md)
 * [Incident Response](templates/incident.md)
 * [Ownership Map](templates/ownership-map.md)
 * [Runbook Index](templates/ops/runbook-index.md)
 * [Runbook Template](templates/ops/runbook-template.md)
+
+### Database
+
+* [Migration Readiness](templates/database/migration-readiness.md)
 
 ### Web3
 
