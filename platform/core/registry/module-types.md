@@ -77,3 +77,11 @@ same domain in both fields. They serve different purposes:
 every session starts with trust tier rules in context) AND lists `harness-governance` in
 `recommendedSkills` (on-demand, loads full companion rule detail and validator commands only
 when a governance task is active). The fragment provides the floor; the skill provides depth.
+
+---
+
+## JSON Schema Reference
+
+JSON Schema files (`manifest.schema.json`, `module.schema.json`) in this directory describe
+the canonical structure of manifests and modules for editor validation and documentation.
+Runtime enforcement uses inline checks in the validator scripts (`platform/validators/`).

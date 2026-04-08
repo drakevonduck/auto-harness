@@ -23,8 +23,8 @@ error message.
 | `validate-manifest.sh` | `<manifest>` | Schema version, required project fields, valid module categories, overrides structure |
 | `validate-module-graph.sh` | `<manifest>` | Module existence on disk, dependency chains satisfied, conflict detection, category/type match |
 | `validate-required-artifacts.sh` | `<manifest> <project-root>` | Every `requiredArtifact` declared by active modules exists on disk |
-| `validate-placeholders.sh` | `<project-root>` | No unfilled `[[PLACEHOLDER]]` or `YYYY-MM-DD` tokens in tracked files (requires ripgrep) |
-| `validate-agent-pack.sh` | `<manifest> <project-root>` | `AGENTS.md` exists when any `agents/*` module is active |
+| `validate-placeholders.sh` | `<project-root>` | No unfilled `[[PLACEHOLDER]]` or `YYYY-MM-DD` tokens in project files; respects `.placeholder-ignore` exclusions (requires ripgrep) |
+| `validate-agent-pack.sh` | `<manifest> <project-root>` | Agent modules declare adapters and compiled fragments; all referenced files must exist |
 | `validate-companions.sh` | `<manifest> <project-root> <base-branch>` | PR diff satisfies all active companion rules (requires git context) |
 
 ### Recommended run order
