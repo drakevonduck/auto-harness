@@ -1,0 +1,6 @@
+# This repo IS the harness platform — its docs, skills, and validators legitimately
+# discuss the [[PLACEHOLDER_NAME]] and YYYY-MM-DD conventions they enforce.
+# Exclude platform infrastructure from self-scan; consumer projects won't need this.
+platform/**
+legacy/**
+README.md

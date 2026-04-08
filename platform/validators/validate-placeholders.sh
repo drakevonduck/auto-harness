@@ -3,7 +3,7 @@ set -euo pipefail
 
 PROJECT_ROOT="${1:-$(pwd)}"
 IGNORE_FILE="${PROJECT_ROOT}/.placeholder-ignore"
-PLACEHOLDER_PATTERN='\[\[[A-Z0-9_]+\]\]'
+PLACEHOLDER_PATTERN='\[\[[A-Z0-9_]+\]\]|YYYY-MM-DD'
 
 cd "${PROJECT_ROOT}"
 

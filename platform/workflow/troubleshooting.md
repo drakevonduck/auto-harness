@@ -305,8 +305,8 @@ Common placeholder patterns:
 - `[[PROJECT_NAME]]` → replace with the project name
 - `[[PERSONA_NAME]]` → replace with a real persona name
 
-If you want to intentionally leave a placeholder (not recommended), add the file to
-`.harnessignore` (if supported) or disable the `placeholders` validation in the manifest.
+If you want to intentionally exclude a file or directory from placeholder checking, add the
+path pattern to `.placeholder-ignore` at the project root (one glob pattern per line).
 
 ---
 
