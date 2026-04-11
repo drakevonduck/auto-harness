@@ -120,9 +120,10 @@ Agents must halt and surface to a human when:
 ## Skills
 
 Check `recommendedSkills` in each active module's `module.yaml` for tool-specific
-skill recommendations. The harness provides 4 native skills:
+skill recommendations. The harness provides 5 native skills:
 
 - `harness-governance` — trust tiers, companion rules, lifecycle controls
 - `harness-testing` — test strategy, coverage, framework guidance
 - `harness-web3` — chain config, contract governance (web3 projects only)
 - `harness-onboarding` — brownfield and greenfield onboarding workflows
+- `harness-tools` — MCP developer tool governance: tier map, Linear artifact workflow, Slack notifications (agents/openclaw active)

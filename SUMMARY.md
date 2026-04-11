@@ -96,6 +96,7 @@ AI-tool packs and operating adapters.
 * [Base](platform/agents/base/README.md)
 * [Claude Code](platform/agents/claude-code/README.md)
 * [Generic LLM](platform/agents/generic-llm/README.md)
+* [OpenClaw](platform/agents/openclaw/README.md)
 
 ## Operating the Harness
 
@@ -126,6 +127,7 @@ other compliant clients. Install to `.agents/skills/` or `.claude/skills/`.
 * [harness-web3](platform/skills/harness-web3/SKILL.md)
 * [harness-testing](platform/skills/harness-testing/SKILL.md)
 * [harness-onboarding](platform/skills/harness-onboarding/SKILL.md)
+* [harness-tools](platform/skills/harness-tools/SKILL.md)
 
 ## Compositions and Examples
 
@@ -218,6 +220,7 @@ A complete sample project with all governance artifacts filled in.
 ### Governance
 
 * [Operating Principles](platform/templates/operating-principles.md)
+* [Tools Registry (TOOLS.md)](platform/templates/tools.md)
 
 ### Architecture and Operations
 

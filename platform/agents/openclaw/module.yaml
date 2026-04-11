@@ -1,0 +1,55 @@
+id: openclaw
+type: agent
+version: 1.0.0
+summary: "OpenClaw operating pack. Declares workspace file requirements, maps harness
+  trust tiers to OpenClaw permissions, and wires MCP developer tools into governance."
+
+dependsOn:
+  - kernel/base
+  - base
+
+conflictsWith: []
+
+requiredArtifacts:
+  - TOOLS.md
+
+optionalArtifacts:
+  - SOUL.md
+  - IDENTITY.md
+  - HEARTBEAT.md
+  - BOOT.md
+
+sensitivePaths:
+  - description: "OpenClaw workspace bootstrap files — changes must align with AGENTS.md contract"
+    patterns:
+      - "^TOOLS\\.md$"
+      - "^SOUL\\.md$"
+      - "^BOOT\\.md$"
+
+companionRules:
+  - description: "Changes to OpenClaw workspace files require cross-reference to AGENTS.md or an ADR"
+    triggerPaths:
+      - "^TOOLS\\.md$"
+      - "^SOUL\\.md$"
+      - "^BOOT\\.md$"
+    requiredAny:
+      - "^AGENTS\\.md$"
+      - "^docs/adr/ADR-"
+    humanReview: "OpenClaw workspace permissions must not exceed kernel tier policy."
+
+validators:
+  - validate-agent-pack
+
+reviewGates:
+  - "OpenClaw adapter files must not claim permissions higher than the kernel permits."
+  - "TOOLS.md tool entries must declare trust tier requirements explicitly."
+
+agentAdapters:
+  - TOOLS.md
+
+compiledFragments:
+  - platform/agents/openclaw/README.md
+
+recommendedSkills:
+  - harness-governance
+  - harness-tools

@@ -148,7 +148,7 @@ declares its governance contract. You compose them to match your project.
 | **Delivery** | Lifecycle posture | `prototype`, `production-saas`, `internal-platform` |
 | **Management** | Product, project, program, and testing governance | `discovery-intake`, `product-lite`, `project-standard`, `program-lite`, `testing-standard` |
 | **Domains** | Vendor or specialist overlays | `supabase`, `web3`, `media-pipeline`, `gitbook` |
-| **Agents** | AI-tool operating packs | `base`, `claude-code`, `generic-llm` |
+| **Agents** | AI-tool operating packs | `base`, `claude-code`, `generic-llm`, `openclaw` |
 
 ### What a Module Declares
 
@@ -247,7 +247,7 @@ reference and a table mapping each template to the module that requires it.
 
 ## Agent Skills
 
-The harness provides four skills in [Agent Skills](https://agentskills.io/specification) format
+The harness provides five skills in [Agent Skills](https://agentskills.io/specification) format
 — the open standard supported by Claude Code, VS Code Copilot, GitHub Copilot, Cursor,
 Gemini CLI, and others:
 
@@ -257,6 +257,7 @@ Gemini CLI, and others:
 | [`harness-testing`](platform/skills/harness-testing/SKILL.md) | Projects with `testing-standard` active | Test strategy patterns, coverage enforcement, framework-specific guidance |
 | [`harness-web3`](platform/skills/harness-web3/SKILL.md) | Web3 projects | UNKNOWN propagation, rate limit budgets, evidence requirements, Tier 5 gates |
 | [`harness-onboarding`](platform/skills/harness-onboarding/SKILL.md) | Brownfield onboarding | Repository assessment, gap analysis, lite manifest generation |
+| [`harness-tools`](platform/skills/harness-tools/SKILL.md) | Projects with `agents/openclaw` active | MCP developer tool governance: trust tier map, Linear artifact workflow, Slack notifications, analytics tools |
 
 Skills are progressively disclosed — agents load only the name and description (~100 tokens)
 at startup. The full body loads on demand when a task matches the skill's domain.
@@ -269,6 +270,7 @@ cp -r platform/skills/harness-governance .agents/skills/
 cp -r platform/skills/harness-testing .agents/skills/    # testing-standard active
 cp -r platform/skills/harness-web3 .agents/skills/       # Web3 projects
 cp -r platform/skills/harness-onboarding .agents/skills/  # brownfield onboarding
+cp -r platform/skills/harness-tools .agents/skills/      # agents/openclaw active
 
 # Claude Code native path
 cp -r platform/skills/harness-governance .claude/skills/
@@ -312,8 +314,8 @@ are the only runtime requirements.
 │   │   ├── delivery/                # prototype, production-saas, internal-platform
 │   │   ├── management/              # discovery-intake, product-lite, project-standard, program-lite, testing-standard
 │   │   └── domains/                 # supabase, web3, media-pipeline, gitbook
-│   ├── agents/                      # Agent operating packs: base, claude-code, generic-llm
-│   ├── skills/                      # Agent Skills: harness-governance, harness-testing, harness-web3, harness-onboarding
+│   ├── agents/                      # Agent operating packs: base, claude-code, generic-llm, openclaw
+│   ├── skills/                      # Agent Skills: harness-governance, harness-testing, harness-web3, harness-onboarding, harness-tools
 │   ├── templates/                   # Artifact skeletons for every required file
 │   ├── validators/                  # validate-*.sh scripts, Ruby library, test suite
 │   ├── compositions/                # Starter manifests for common project types

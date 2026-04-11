@@ -173,11 +173,13 @@ and other compliant clients. Harness-native skills live in `platform/skills/`.
 cp -r platform/skills/harness-governance .agents/skills/   # all projects
 cp -r platform/skills/harness-testing .agents/skills/      # testing-standard module active
 cp -r platform/skills/harness-web3 .agents/skills/         # Web3 projects only
+cp -r platform/skills/harness-tools .agents/skills/        # agents/openclaw active
 
 # Claude Code native path (Claude Code also scans .claude/skills/)
 cp -r platform/skills/harness-governance .claude/skills/
 cp -r platform/skills/harness-testing .claude/skills/      # testing-standard module active
 cp -r platform/skills/harness-web3 .claude/skills/         # Web3 projects only
+cp -r platform/skills/harness-tools .claude/skills/        # agents/openclaw active
 ```
 
 At session start, agents load only the skill name and description (~100 tokens per skill).

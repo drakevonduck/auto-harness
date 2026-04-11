@@ -90,6 +90,7 @@ is to flatten the directory when a template is the only file for its category:
 | `templates/risk-register.md` | `docs/security/risk-register.md` |
 | `templates/ownership-map.md` | `docs/ops/ownership-map.md` |
 | `templates/operating-principles.md` | `docs/operating-principles.md` |
+| `templates/tools.md` | `TOOLS.md` (project root) |
 
 Numbered record types use the template as a starting point but are stored
 with their own naming convention:
@@ -159,6 +160,7 @@ Jump to: [Discovery](#discovery) | [Product](#product) | [Project](#project) |
 | Template | Required By Module | Path |
 | -------- | ------------------ | ---- |
 | Operating principles | `core/kernel/base` | `templates/operating-principles.md` |
+| Tools registry (TOOLS.md) | `agents/openclaw` | `templates/tools.md` |
 
 ### Architecture and Operations
 

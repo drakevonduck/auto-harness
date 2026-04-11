@@ -100,6 +100,7 @@ discover and activate.
 | `harness-testing` | `platform/skills/harness-testing/` | Test strategy patterns, coverage enforcement, framework-specific guidance |
 | `harness-web3` | `platform/skills/harness-web3/` | UNKNOWN propagation, rate limit budgets, evidence requirements, Tier 5 gates |
 | `harness-onboarding` | `platform/skills/harness-onboarding/` | Brownfield assessment, gap analysis, lite manifest generation |
+| `harness-tools` | `platform/skills/harness-tools/` | MCP developer tool governance: trust tier map, Linear artifact workflow, Slack notifications, analytics tools |
 
 **Why skills instead of (only) compiled fragments?**
 
