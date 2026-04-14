@@ -4,8 +4,7 @@ version: 1.0.0
 summary: Python overlay for interpreter pinning, dependency governance, packaging choices, and test/lint expectations.
 dependsOn:
   - kernel/base
-conflictsWith:
-  - node-typescript
+conflictsWith: []
 requiredArtifacts: []
 optionalArtifacts:
   - pyproject.toml

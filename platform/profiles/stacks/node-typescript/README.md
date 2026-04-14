@@ -92,11 +92,27 @@ See `platform/workflow/skills-and-agents.md` for installation guidance and the f
 
 ---
 
-## Conflicts with `python`
+## Polyglot Projects
 
-A project can only use one primary language stack. Node/TypeScript and Python cannot coexist
-in the same manifest. If the system genuinely uses both, each surface should be a separate
-service with its own manifest.
+Node/TypeScript and Python can both be activated in the same manifest. Many real projects
+legitimately use multiple runtimes — for example, a Python tooling layer sitting alongside
+a Node-based orchestration or frontend. Activating both gives you the companion rules and
+sensitive-path governance for both sets of files, which is what a polyglot project needs.
+
+**When activating multiple stacks:**
+
+- Designate a **primary stack** — the runtime most central to the project's build, deploy,
+  and operational story. Declare the primary stack and rationale in `docs/architecture/overview.md`.
+- Secondary stacks carry the same companion rules as primary — dependency changes in any
+  active stack still require ADR or architecture-overview updates. The distinction is
+  editorial: the primary stack is what you lead with when describing the project.
+- If the two surfaces are genuinely independent services with separate deployments, prefer
+  two separate manifests over one polyglot manifest. Separate services = separate governance.
+
+The older convention was to pick exactly one stack. That constraint was removed when it
+became clear it forced artificial choices for legitimately polyglot projects. A future
+harness version may add primary/secondary semantics at the manifest-schema level
+(see deferred finding L-13 in `docs/project/revision-tracker.md`).
 
 ---
 

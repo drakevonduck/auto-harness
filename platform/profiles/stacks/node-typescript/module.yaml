@@ -4,8 +4,7 @@ version: 1.0.0
 summary: Node.js and TypeScript overlay for runtime pinning, package governance, CI expectations, and tool permissions.
 dependsOn:
   - kernel/base
-conflictsWith:
-  - python
+conflictsWith: []
 requiredArtifacts: []
 optionalArtifacts:
   - .nvmrc
