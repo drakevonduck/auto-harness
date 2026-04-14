@@ -1,17 +1,20 @@
 # ADR-NNNN: [Title]
 
-**Status:** Proposed / Accepted / Superseded / Deprecated
+**Status:** Proposed | Accepted | Superseded by ADR-NNNN | Deprecated
 **Date:** YYYY-MM-DD
 **Author:** @owner
 **Reviewers:** @owner
+**Context source:** [What triggered this decision — meeting, review finding, technical constraint, incident, etc.]
 
 ## Context
 
-State the problem, constraints, and why a decision is needed.
+Why this decision came up. Not just what — why. State the problem or
+opportunity that prompted the decision, the constraints involved, and
+what options are being weighed.
 
 ## Decision
 
-State the decision in one or two crisp sentences.
+State the decision in one or two crisp sentences. Be specific.
 
 ## Consequences
 
@@ -29,6 +32,12 @@ State the decision in one or two crisp sentences.
 
 ## Alternatives Considered
 
-| Alternative | Why rejected |
-|-------------|--------------|
-| Option | Reason |
+### [Alternative 1 name]
+
+- Brief description
+- Why rejected
+
+### [Alternative 2 name]
+
+- Brief description
+- Why rejected
