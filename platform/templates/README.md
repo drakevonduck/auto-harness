@@ -76,6 +76,37 @@ Date placeholders (`YYYY-MM-DD`) are also treated as unfilled by the placeholder
 | `[[METHOD]]` | PRD template | How the success metric is measured |
 | `[[OPEN_QUESTION]]` | PRD template | Question to resolve before or during implementation |
 | `[[RELATED_DOCUMENT]]` | PRD template | Link to related ADR, PRD, design doc, or external reference |
+| `[[RELATED_ADR]]` | PRD template | ADR numbers this PRD depends on or extends |
+| `[[REVIEW_CYCLE]]` | PRD template, standards docs | Review cadence (e.g., `Quarterly`, `Semi-annually`, `Annually`) |
+| `[[REQUIREMENT]]` | PRD template | Specific functional requirement description |
+| `[[FINDING_DESCRIPTION]]` | Revision tracker | One-line description of the finding |
+| `[[AFFECTED_DOCS]]` | Revision tracker | Documents affected by the finding |
+| `[[REVIEWER]]` | Review log | Name/handle of the reviewer (e.g., `@unclenate`) |
+| `[[REVIEW_SUBJECT]]` | Review log | What was reviewed (e.g., `ADR-0007`, `docs/product/requirements.md §3`) |
+| `[[REVIEW_CONTEXT]]` | Review log | Why the review happened (e.g., `Tier 3 commit gate`, `ADR status change`) |
+| `[[REVIEW_NOTES]]` | Review log | Additional context or follow-up actions |
+| `[[KPI_DEFINITION]]` | KPI dictionary | One-sentence definition of what the KPI measures |
+| `[[KPI_FORMULA]]` | KPI dictionary | Explicit, reproducible calculation formula |
+| `[[KPI_DATA_SOURCE]]` | KPI dictionary | Where the raw data comes from |
+| `[[KPI_FREQUENCY]]` | KPI dictionary | Reporting cadence (e.g., `Monthly`, `On-change`) |
+| `[[KPI_APPLICABILITY]]` | KPI dictionary | Which projects, tiers, or domains track this KPI |
+| `[[KPI_BASELINE_PROTOCOL]]` | KPI dictionary | How the initial baseline is established |
+| `[[COMPONENT_NAME]]` | Fallback matrix | Name of the failed component (e.g., `Supabase`, `Ollama`) |
+| `[[IMPACT]]` | Fallback matrix | What breaks when the component fails |
+| `[[FALLBACK]]` | Fallback matrix | What replaces the normal capability |
+| `[[TRIGGER]]` | Fallback matrix | Condition that signals it's time to switch |
+| `[[P0_DESCRIPTION]]` | Fallback matrix | Revenue-critical / safety-critical functions |
+| `[[P1_DESCRIPTION]]` | Fallback matrix | Core business operation functions |
+| `[[P2_DESCRIPTION]]` | Fallback matrix | Delivery pipeline functions |
+| `[[P3_DESCRIPTION]]` | Fallback matrix | Convenience / non-blocking functions |
+| `[[FUNCTION_NAME]]` | Fallback matrix | Name of the automated function being covered |
+| `[[NORMAL_MODE]]` | Fallback matrix | How the function operates when everything works |
+| `[[DEGRADED_MODE]]` | Fallback matrix | Reduced-capability operation mode |
+| `[[MANUAL_FALLBACK]]` | Fallback matrix | Human-executed alternative when automation is unavailable |
+| `[[SWITCH_TRIGGER]]` | Fallback matrix | Condition that causes a mode change |
+| `[[EXIT_CRITERIA]]` | Fallback matrix | When to return to normal mode |
+| `[[FALLBACK_TYPE]]` | Fallback matrix | Which fallback mode was exercised (degraded or manual) |
+| `[[NOTES]]` | Fallback matrix | Issues found during a fallback exercise |
 
 ---
 
@@ -138,6 +169,8 @@ Jump to: [Discovery](#discovery) | [Product](#product) | [Project](#project) |
 | Milestones | `management/project-standard` | `templates/project/milestones.md` |
 | Change log | `management/project-standard` | `templates/project/change-log.md` |
 | Dependency log | `management/project-standard` | `templates/project/dependency-log.md` |
+| Revision tracker | `management/project-standard` | `templates/project/revision-tracker.md` |
+| Review log | `management/project-standard` (optional) | `templates/project/review-log.md` |
 
 ### Program
 
@@ -162,6 +195,15 @@ Jump to: [Discovery](#discovery) | [Product](#product) | [Project](#project) |
 | Operating principles | `core/kernel/base` | `templates/operating-principles.md` |
 | Tools registry (TOOLS.md) | `agents/openclaw` | `templates/tools.md` |
 
+### Standards
+
+Single-source-of-truth documents that other artifacts reference instead of
+duplicating inline. Absorbed from governance patterns observed in adsclaw.
+
+| Template | Optional/Required | Module | Path |
+| -------- | ----------------- | ------ | ---- |
+| KPI dictionary | Optional | `management/product-lite` | `templates/standards/kpi-dictionary.md` |
+
 ### Architecture and Operations
 
 | Template | Required By Module | Path |
@@ -176,6 +218,7 @@ Jump to: [Discovery](#discovery) | [Product](#product) | [Project](#project) |
 | Environment inventory | `delivery/production-saas` | `templates/ops/environment-inventory.md` |
 | Rollback checklist | `delivery/production-saas` | `templates/ops/rollback-checklist.md` |
 | Runbook (individual) | Populated from runbook index | `templates/ops/runbook-template.md` |
+| Fallback matrix | `delivery/production-saas` (optional) | `templates/ops/fallback-matrix.md` |
 
 ### Database
 

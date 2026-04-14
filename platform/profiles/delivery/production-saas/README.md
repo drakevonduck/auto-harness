@@ -28,6 +28,58 @@ checkbox — an honest assessment of what could go wrong and what the team is do
 
 ---
 
+## Optional: Fallback Matrix
+
+**`docs/ops/fallback-matrix.md`** — Degraded-mode and manual fallback plan
+for every critical automated function. Based on the principle that every
+automated function must have a defined fallback, because automation that
+fails silently is worse than no automation.
+
+The fallback matrix complements but does not replace the rollback checklist.
+Rollback reverses a release after failure; fallback keeps the system useful
+*during* failure. They answer different questions:
+
+| Artifact | Question it answers |
+|----------|---------------------|
+| `rollback-checklist.md` | How do we undo this release safely? |
+| `incident.md` | How do we respond while the incident is active? |
+| `fallback-matrix.md` | How do we stay useful while a dependency is failing? |
+| `runbook-index.md` | Where are the step-by-step procedures? |
+
+### When to adopt
+
+This artifact is **optional on `production-saas`** but effectively required
+before the project reaches the **Harness Ready** lifecycle stage (see
+`platform/core/kernel/base/lifecycle-controls.md`). Expected progression:
+
+| Lifecycle stage | Fallback matrix expected state |
+|-----------------|-------------------------------|
+| Bootstrap Complete | Empty template in place is fine; populating not required |
+| Requirements captured | Component Failure Matrix populated — you know what your dependencies are |
+| Pre-production launch | Per-Function Fallback Mode blocks defined for all critical functions; Degradation Priorities set |
+| Harness Ready | First Fallback Exercise logged; matrix is current |
+| Ongoing (post-launch) | Fallback Exercise Log updated quarterly; new functions add fallback definition before release |
+
+### How to populate
+
+Three paths depending on project stage:
+
+1. **Greenfield projects** — Populate alongside architecture decisions. When
+   an ADR names a new external dependency or automated function, the
+   matrix gets a new row in the same change.
+2. **Brownfield adoption** — Use the `harness-onboarding` skill's
+   governance inventory phase to glean existing fallback patterns from the
+   codebase, runbooks, or incident postmortems.
+3. **Mid-project adoption** — Start with what breaks most: run a quick
+   "what fails weekly" audit, document each component's current fallback
+   behavior (even if it's "manual intervention by on-call"), then graduate
+   from there.
+
+Template: `platform/templates/ops/fallback-matrix.md`. Pattern absorbed
+from adsclaw's fallback-first architecture principle.
+
+---
+
 ## Companion Rule
 
 Changes to delivery automation (`.github/workflows/`, `Dockerfile`, `terraform/`, `deploy/`,

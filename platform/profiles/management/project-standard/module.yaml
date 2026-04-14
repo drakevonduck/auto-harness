@@ -10,8 +10,10 @@ requiredArtifacts:
   - docs/project/dependency-log.md
   - docs/project/milestones.md
   - docs/project/change-log.md
+  - docs/project/revision-tracker.md
 optionalArtifacts:
   - docs/ops/ownership-map.md
+  - docs/project/review-log.md
 sensitivePaths: []
 companionRules: []
 validators:

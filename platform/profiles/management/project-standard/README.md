@@ -26,6 +26,25 @@ A running record of decisions that changed scope, requirements, or approach. Ans
 did we end up here?" when someone asks six months later. Updated whenever a scope, requirement,
 or architectural decision changes.
 
+**`docs/project/revision-tracker.md`**
+Tracks findings from reviews, audits, and validator runs, with resolution status over time.
+This is where validator failures live — not as failures, but as a backlog. Each finding
+has an ID (severity-prefixed), description, affected documents, status, and resolution
+reference. Absorbed from patterns observed in adsclaw's governance practice.
+
+### Optional Artifacts
+
+**`docs/project/review-log.md`**
+Running record of governance reviews on this project — who reviewed what, when, and with
+what outcome. Complements (does not replace) git history. Log when a trust-tier-gated
+action is authorized, an ADR status changes, a PRD is approved/rejected, or a required
+artifact is materially changed. Pattern absorbed from adsclaw's dual-track governance
+(revision tracker + review log).
+
+**`docs/ops/ownership-map.md`**
+Named ownership of system components and review responsibility. Co-required by
+`delivery/production-saas` if that module is active.
+
 ---
 
 ## How This Overlay Fits Into the Management Stack

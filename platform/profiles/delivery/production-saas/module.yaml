@@ -13,6 +13,7 @@ requiredArtifacts:
   - docs/security/risk-register.md
 optionalArtifacts:
   - docs/ops/runbook-index.md
+  - docs/ops/fallback-matrix.md
 sensitivePaths:
   - description: Delivery automation and deployment configuration
     patterns:

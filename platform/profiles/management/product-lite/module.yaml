@@ -13,6 +13,7 @@ optionalArtifacts:
   - docs/product/personas.md
   - docs/discovery/intake-questionnaire.md
   - docs/discovery/mvp-scope.md
+  - docs/standards/kpi-dictionary.md
 sensitivePaths: []
 companionRules:
   - description: Requirements changes during development must be reflected in project change-log, a new ADR, or a new PRD

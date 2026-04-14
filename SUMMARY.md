@@ -17,6 +17,7 @@ Step-by-step guides for adopting and operating the harness.
 * [Discovery to Composition](platform/workflow/discovery-to-composition.md)
 * [Brownfield Onboarding](platform/workflow/brownfield-onboarding.md)
 * [Skills and Agents](platform/workflow/skills-and-agents.md)
+* [Standards Pattern](platform/workflow/standards-pattern.md)
 
 ## Kernel — Governance Foundation
 
@@ -204,6 +205,8 @@ A complete sample project with all governance artifacts filled in.
 * [Milestones](platform/templates/project/milestones.md)
 * [Change Log](platform/templates/project/change-log.md)
 * [Dependency Log](platform/templates/project/dependency-log.md)
+* [Revision Tracker](platform/templates/project/revision-tracker.md)
+* [Review Log](platform/templates/project/review-log.md)
 
 ### Program
 
@@ -222,6 +225,10 @@ A complete sample project with all governance artifacts filled in.
 * [Operating Principles](platform/templates/operating-principles.md)
 * [Tools Registry (TOOLS.md)](platform/templates/tools.md)
 
+### Standards
+
+* [KPI Dictionary](platform/templates/standards/kpi-dictionary.md)
+
 ### Architecture and Operations
 
 * [Architecture Overview](platform/templates/architecture-overview.md)
@@ -234,6 +241,7 @@ A complete sample project with all governance artifacts filled in.
 * [Ownership Map](platform/templates/ownership-map.md)
 * [Runbook Index](platform/templates/ops/runbook-index.md)
 * [Runbook Template](platform/templates/ops/runbook-template.md)
+* [Fallback Matrix](platform/templates/ops/fallback-matrix.md)
 
 ### Database
 

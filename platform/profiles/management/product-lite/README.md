@@ -92,6 +92,29 @@ Validators check that the file exists and has content. Reviewers check that the 
 
 ---
 
+## Optional: KPI Dictionary
+
+When a project's success metrics are measured across multiple documents
+(PRDs, engine plans, dashboards, stakeholder reports), consolidate them
+into a single `docs/standards/kpi-dictionary.md`. This is the
+single-source-of-truth pattern for metrics:
+
+- PRDs and requirements reference KPIs by name, not re-definition
+- Changes to a KPI definition are breaking changes for everything
+  downstream — treat them like an API change
+- Retired KPIs stay documented with their replacement
+
+This artifact is **optional** — small projects with a handful of metrics
+can define them inline in `requirements.md` without a dictionary. Adopt
+it when metric drift between planning and reporting becomes a real risk
+(typically: multiple products, multiple audiences, or external reporting
+commitments).
+
+Template: `platform/templates/standards/kpi-dictionary.md`. Pattern
+absorbed from adsclaw governance practice.
+
+---
+
 ## Connecting to Discovery
 
 If `discovery-intake` is also active, the product-lite artifacts are downstream of it:
