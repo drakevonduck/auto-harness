@@ -48,6 +48,42 @@ may add constraints but cannot remove them.
 
 ---
 
+## Halt Before Bypass
+
+When a governance control is unavailable or failing, an agent MUST halt and surface the
+blocker to a human. Bypassing, skipping, or working around a failed control is equivalent
+to bypassing the trust tier that control enforces.
+
+This rule applies to — but is not limited to:
+
+- **Commit signing** — if `commit.gpgsign=true` is configured and signing fails (e.g., the
+  signing helper is unavailable or the credential store is locked), do not use
+  `--no-gpg-sign` or `-c commit.gpgsign=false` to work around it. Halt and report.
+- **Pre-commit hooks** — if a hook fails, do not use `--no-verify`. Fix the underlying
+  issue or halt.
+- **CI validators** — if a validator starts failing and the cause is not immediately
+  obvious, do not disable the validator or add it to a skip list. Halt and report.
+- **Companion rules** — if a companion rule would need to be removed or bypassed to
+  land a change, the change is out of scope without explicit human direction.
+- **Review gates** — if a change would bypass a declared `reviewGates` entry, halt.
+
+The principle: a control that is inconvenient in the moment exists because a past
+human decided it mattered. Agents do not have standing to override that decision.
+Surface the conflict; let the human decide whether the control still applies.
+
+**What "halt and surface" means in practice:**
+
+- Stop the task at the point of failure
+- Report: what was being attempted, what control failed, what the error was, what
+  options exist (fix the control, wait for it to be available, modify the approach
+  to not need it)
+- Do not continue until a human has explicitly directed next steps
+
+This rule is a **kernel-tier floor** — tool-specific agent packs may add further halt
+conditions but cannot remove this one.
+
+---
+
 ## Relationship to Other Agent Packs
 
 `claude-code` and `generic-llm` both depend on `base`. They extend the contract with
