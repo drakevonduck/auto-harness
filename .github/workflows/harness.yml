@@ -1,0 +1,69 @@
+name: Harness Self-Governance
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validators:
+    name: Validators
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+
+      - name: Validate manifest structure
+        run: bash platform/validators/validate-manifest.sh harness.manifest.yaml
+
+      - name: Validate module graph
+        run: bash platform/validators/validate-module-graph.sh harness.manifest.yaml
+
+      - name: Validate required artifacts
+        run: bash platform/validators/validate-required-artifacts.sh harness.manifest.yaml .
+
+      - name: Validate placeholders
+        run: bash platform/validators/validate-placeholders.sh .
+
+      - name: Validate agent pack
+        run: bash platform/validators/validate-agent-pack.sh harness.manifest.yaml .
+
+      - name: Validate companion rules
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          bash platform/validators/validate-companions.sh \
+            harness.manifest.yaml . "$BASE_REF"
+
+  tests:
+    name: Self-Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Install ripgrep
+        run: sudo apt-get install -y ripgrep
+
+      - name: Unit tests (registry logic)
+        run: |
+          ruby -I platform/validators/lib \
+               platform/validators/test/test_harness_registry.rb
+
+      - name: Integration tests (validator scripts)
+        run: |
+          ruby -I platform/validators/lib \
+               platform/validators/test/test_validators_integration.rb

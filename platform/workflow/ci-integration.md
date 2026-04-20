@@ -69,9 +69,11 @@ jobs:
 
       - name: Validate companion rules
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           bash $PLATFORM_ROOT/validators/validate-companions.sh \
-            $MANIFEST $PROJECT_ROOT ${{ github.base_ref }}
+            $MANIFEST $PROJECT_ROOT "$BASE_REF"
 
       - name: Validate placeholders
         run: bash $PLATFORM_ROOT/validators/validate-placeholders.sh $PROJECT_ROOT
@@ -220,9 +222,11 @@ jobs:
       - run: bash platform/validators/validate-required-artifacts.sh harness.manifest.yaml .
       - name: Companion rules (PRs only)
         if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           bash platform/validators/validate-companions.sh \
-            harness.manifest.yaml . ${{ github.base_ref }}
+            harness.manifest.yaml . "$BASE_REF"
       - run: bash platform/validators/validate-placeholders.sh .
       - run: bash platform/validators/validate-agent-pack.sh harness.manifest.yaml .
 

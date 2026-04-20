@@ -119,7 +119,7 @@ wants a calendar event created — ask first.
 Canva is Tier 2 for workspace creation and Tier 3 for publishing or sharing.
 
 **Use cases:**
-- Architecture diagrams to accompany `docs/architecture/overview.md`
+- Architecture diagrams to accompany an architecture overview artifact (e.g., `docs/architecture/overview.md` if the project has one)
 - Slide decks for milestone reviews and stakeholder reports
 - Visual assets for product documents
 
