@@ -1,0 +1,7 @@
+# Project coding conventions for Cursor AI (Python data pipeline)
+
+- Target Python 3.12; use `from __future__ import annotations` in all modules
+- All functions must include type hints; prefer `pydantic.BaseModel` for data shapes
+- Use `pathlib.Path` over raw string paths
+- Log via the project logger in `src/etl/_logging.py`; never call `print()`
+- New ETL stages must have a corresponding test in `tests/etl/`

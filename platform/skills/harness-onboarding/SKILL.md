@@ -300,7 +300,12 @@ After the table, summarize: total artifacts required, number EXISTS/MISSING/PART
 State the exact commands to run and what to expect given this repository's gap profile.
 
 ```bash
-PLATFORM=path/to/platform  # adjust to actual location
+# Submodule consumers: default to .harness; override if your mount path differs.
+HARNESS_SUBMODULE_ROOT="${HARNESS_SUBMODULE_ROOT:-.harness}"
+PLATFORM="$HARNESS_SUBMODULE_ROOT/platform"
+
+# Monorepo / subtree consumers: point PLATFORM directly at your platform/ tree.
+# PLATFORM=path/to/platform
 
 # Step 1 — Manifest structure (should pass immediately with the lite manifest)
 bash $PLATFORM/validators/validate-manifest.sh harness.manifest.yaml

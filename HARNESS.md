@@ -52,3 +52,9 @@ The governance rules live in the modular platform:
 - Templates: `platform/templates/`
 
 This file is the project-level entrypoint. The platform modules are the authority.
+
+---
+
+## Consuming auto-harness in other projects
+
+Auto-harness can be mounted as a git submodule in downstream projects, with `install.sh` providing brownfield-safe bootstrap and `link-skills.sh` providing symlink-based skill delivery. See [platform/workflow/submodule-integration.md](platform/workflow/submodule-integration.md) for the canonical guide and [docs/adr/ADR-0003-submodule-integration.md](docs/adr/ADR-0003-submodule-integration.md) for the design rationale.

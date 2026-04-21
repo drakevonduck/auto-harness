@@ -85,16 +85,12 @@ jobs:
 ## Setting PLATFORM_ROOT
 
 The `PLATFORM_ROOT` variable must point to the `platform/` directory. How you set it depends on
-how the platform is included in your project:
+how auto-harness is included in your project:
 
-**Option A — Platform lives inside the project repo (monorepo or subtree):**
-
-```yaml
-env:
-  PLATFORM_ROOT: ${{ github.workspace }}/platform
-```
-
-**Option B — Platform is a git submodule:**
+**Option A — Submodule (recommended).** Mount auto-harness as a git submodule at a path of your
+choosing (`.harness` by default). Set `HARNESS_SUBMODULE_ROOT` to the mount path and derive
+`PLATFORM_ROOT` from it. Upstream improvements flow in via `git submodule update --remote`. See
+[submodule-integration.md](submodule-integration.md) for the full setup flow.
 
 ```yaml
 - name: Checkout (with submodules)
@@ -103,6 +99,16 @@ env:
     submodules: recursive
     fetch-depth: 0
 
+env:
+  HARNESS_SUBMODULE_ROOT: ${{ github.workspace }}/.harness
+  PLATFORM_ROOT: ${{ github.workspace }}/.harness/platform
+```
+
+For a non-default mount path (e.g., `vendor/auto-harness`), substitute consistently in both variables.
+
+**Option B — Platform lives inside the project repo (monorepo or subtree):**
+
+```yaml
 env:
   PLATFORM_ROOT: ${{ github.workspace }}/platform
 ```

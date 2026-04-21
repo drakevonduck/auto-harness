@@ -1,0 +1,6 @@
+# Project coding conventions for Cursor AI
+
+- Use TypeScript strict mode everywhere
+- Prefer async/await over Promise chains
+- All exported functions must have JSDoc comments
+- Never use `any` type without an explanatory comment

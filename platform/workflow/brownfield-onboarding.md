@@ -27,26 +27,32 @@ against the harness before deciding whether to bring it under governance.
 Existing repo
     │
     ▼
-Step 1 — Get oriented (read this guide, optionally copy brownfield-lite.yaml)
+Step 1   — Get oriented (read this guide)
     │
     ▼
-Step 2 — Run the harness-onboarding skill with any AI coding assistant
+Step 1.5 — Add auto-harness as submodule; run install.sh (recommended)
+    │       See: submodule-integration.md
+    │       This replaces the manual copy-in steps below for submodule consumers.
+    ▼
+Step 2   — Run the harness-onboarding skill with any AI coding assistant
     │
     ▼
-Step 3 — Review the 5-section assessment output
+Step 3   — Review the 5-section assessment output
     │
     ▼
-Step 4 — Copy the AI-generated lite manifest to harness.manifest.yaml; run validators
+Step 4   — Update harness.manifest.yaml per the assessment; re-run validators
     │
     ▼
-Step 5 — Create kernel artifacts (HARNESS.md, AGENTS.md, docs/operating-principles.md)
+Step 5   — Refine kernel artifacts (HARNESS.md, AGENTS.md, docs/operating-principles.md)
     │
     ▼
-Step 6 — Progressive compliance: backfill docs, re-enable validators module by module
+Step 6   — Progressive compliance: backfill docs, re-enable validators module by module
     │
     ▼
-Step 7 — Wire CI when all validators pass locally
+Step 7   — Wire CI when all validators pass locally
 ```
+
+**Submodule consumers:** Step 1.5 produces `harness.manifest.yaml`, `HARNESS.md`, `CLAUDE.md`, `AGENTS.md` (with a cross-client marker block), and symlinks from `.agents/skills/` and `.claude/skills/` into the submodule — all brownfield-safe (never clobbers foreign or platform-artifact files). Steps 2–7 then refine what `install.sh` produced. If you skip Step 1.5 and copy files in manually, follow [bootstrap-quickstart.md](bootstrap-quickstart.md) for the manual pattern; Steps 2–7 still apply.
 
 ---
 

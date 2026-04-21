@@ -1,0 +1,18 @@
+# CLAUDE.md
+
+Claude Code must read:
+
+1. `HARNESS.md`
+2. `AGENTS.md`
+3. this file
+4. active stack and delivery overlays declared in `harness.manifest.yaml`
+
+The harness itself is mounted as a git submodule at `.harness/`. Governance
+fragments, skills, and templates referenced by the manifest resolve under that
+prefix — for example:
+
+- `.harness/platform/core/kernel/base/` — kernel doctrine
+- `.harness/platform/skills/harness-governance/` — governance skill (also
+  symlinked into `.claude/skills/` and `.agents/skills/`)
+- `.harness/platform/templates/` — artifact templates
+- `.harness/platform/validators/` — validator scripts

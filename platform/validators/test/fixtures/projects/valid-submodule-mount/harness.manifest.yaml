@@ -1,0 +1,20 @@
+schemaVersion: 1
+project:
+  id: valid-prototype
+  name: Valid Prototype
+  maturity: prototype
+  criticality: low
+modules:
+  core:
+    - kernel/base
+  delivery:
+    - prototype
+  management:
+    - discovery-intake
+    - product-lite
+    - project-standard
+  agents:
+    - base
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

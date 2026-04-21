@@ -12,6 +12,7 @@
 
 Step-by-step guides for adopting and operating the harness.
 
+* [Submodule Integration](platform/workflow/submodule-integration.md)
 * [Bootstrap Quickstart](platform/workflow/bootstrap-quickstart.md)
 * [Web3 Bootstrap Quickstart](platform/workflow/bootstrap-web3-quickstart.md)
 * [Discovery to Composition](platform/workflow/discovery-to-composition.md)

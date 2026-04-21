@@ -373,6 +373,24 @@ The harness is Bootstrap Complete when all validators exit 0 and your CI is gree
 
 ---
 
+## Integrating into your repo
+
+The steps above show the "platform-at-root" / self-dogfood pattern — auto-harness's `platform/` tree lives inside the repo. For consumer projects, the recommended pattern is **auto-harness as a git submodule**:
+
+```bash
+cd your-repo
+git submodule add https://github.com/YOUR-ORG/auto-harness .harness
+bash .harness/platform/bootstrap/install.sh
+```
+
+The bootstrap is brownfield-safe — it never overwrites pre-existing files from other AI platforms (Cursor, Windsurf, Copilot, Codex, OpenClaw, Hermes) and merges the cross-client `AGENTS.md` via a stable marker block. Skills are delivered as relative symlinks into `.agents/skills/` and `.claude/skills/`, so `git submodule update --remote .harness` pulls upstream improvements automatically with no re-sync step.
+
+- Full guide: [`platform/workflow/submodule-integration.md`](platform/workflow/submodule-integration.md)
+- Decision record: [`docs/adr/ADR-0003-submodule-integration.md`](docs/adr/ADR-0003-submodule-integration.md)
+- Bootstrap tools reference: [`platform/bootstrap/README.md`](platform/bootstrap/README.md)
+
+---
+
 ## Design Principles
 
 These principles are from the kernel doctrine and apply across all modules:

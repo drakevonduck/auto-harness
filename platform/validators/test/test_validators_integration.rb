@@ -294,3 +294,66 @@ class TestValidateAgentPack < Minitest::Test
     end
   end
 end
+
+# ---------------------------------------------------------------------------
+# Submodule-mount path resolution
+#
+# Proves that validators work correctly when invoked through a submodule-style
+# mount path (e.g. `.harness/platform/validators/...`) rather than through the
+# top-level `platform/validators/...`. The fixture at
+# `fixtures/projects/valid-submodule-mount/` contains a `.harness` symlink
+# that simulates what `git submodule add` would produce in a consumer repo.
+#
+# The claim under test: HARNESS_ROOT resolution via SCRIPT_DIR/../.. is
+# mount-agnostic, so no validator changes are required to support submodule
+# consumers. A green test here is the proof.
+# ---------------------------------------------------------------------------
+class TestSubmoduleMount < Minitest::Test
+  SUBMODULE_FIXTURE = File.expand_path("fixtures/projects/valid-submodule-mount", File.dirname(__FILE__))
+
+  # Run a validator through the fixture's own `.harness/platform/validators/...` path.
+  def run_via_mount(script_name, *args)
+    mount_script = File.join(SUBMODULE_FIXTURE, ".harness/platform/validators", script_name)
+    cmd = ["bash", mount_script, *args]
+    stdout, stderr, status = Open3.capture3(*cmd)
+    [stdout.strip, stderr.strip, status.exitstatus]
+  end
+
+  def manifest_path
+    File.join(SUBMODULE_FIXTURE, "harness.manifest.yaml")
+  end
+
+  def test_harness_symlink_resolves_to_repo_root
+    mount = File.join(SUBMODULE_FIXTURE, ".harness")
+    assert File.symlink?(mount), "expected .harness to be a symlink"
+    resolved = File.realpath(mount)
+    expected = File.expand_path("..", PLATFORM_DIR)  # platform/'s parent = repo root
+    assert_equal expected, resolved,
+                 "mount symlink should resolve to the auto-harness repo root"
+  end
+
+  def test_validate_manifest_through_mount_passes
+    out, err, code = run_via_mount("validate-manifest.sh", manifest_path)
+    assert_equal 0, code, "expected exit 0 through mount. stderr: #{err}"
+    assert_match(/✓/, out)
+  end
+
+  def test_validate_module_graph_through_mount_passes
+    out, err, code = run_via_mount("validate-module-graph.sh", manifest_path)
+    assert_equal 0, code, "expected exit 0 through mount. stderr: #{err}"
+    assert_match(/✓/, out)
+  end
+
+  def test_top_level_and_mount_paths_produce_equivalent_results
+    # Same manifest, same validator, invoked two different ways — must agree.
+    top_out, _top_err, top_code =
+      run_validator("validate-manifest.sh", manifest_path)
+    mount_out, _mount_err, mount_code =
+      run_via_mount("validate-manifest.sh", manifest_path)
+
+    assert_equal top_code, mount_code,
+                 "exit codes must match between top-level and mount invocations"
+    assert_equal top_out, mount_out,
+                 "stdout must match between top-level and mount invocations"
+  end
+end

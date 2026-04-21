@@ -1,0 +1,27 @@
+schemaVersion: 1
+project:
+  id: node-web-saas-postgres
+  name: Node Web SaaS Postgres
+  maturity: production
+  criticality: medium
+modules:
+  core:
+    - kernel/base
+  stacks:
+    - node-typescript
+  architectures:
+    - web-app
+  data:
+    - relational-postgres
+  delivery:
+    - production-saas
+  management:
+    - discovery-intake
+    - product-lite
+    - project-standard
+  agents:
+    - base
+    - claude-code
+overrides:
+  requiredArtifacts: []
+  disabledValidations: []

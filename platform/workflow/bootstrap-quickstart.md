@@ -8,6 +8,20 @@ If you're starting from an idea with no stack chosen yet, start with
 
 ---
 
+## Step 0 — Choose your integration mode
+
+**If you are using auto-harness as a git submodule (recommended for all consumer projects), you should NOT follow the rest of this document.** Instead:
+
+```bash
+cd your-repo
+git submodule add <auto-harness-repo-url> .harness
+bash .harness/platform/bootstrap/install.sh
+```
+
+That single command replaces Steps 1 through 6 below and is brownfield-safe. See [submodule-integration.md](submodule-integration.md) for the full flow. The rest of this quickstart applies only when auto-harness lives inside your project (Option B in [ci-integration.md](ci-integration.md)) — e.g. monorepo or subtree consumption.
+
+---
+
 ## What You Need
 
 - Ruby 3.0+ (`ruby --version`)

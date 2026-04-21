@@ -1,0 +1,1 @@
+This fixture models a consumer repo that has mounted auto-harness as a git submodule at `.harness/`. The `.harness` symlink stands in for what `git submodule add` would produce. Tests invoke validators through `.harness/platform/validators/...` to prove path resolution works under mounted mode.
