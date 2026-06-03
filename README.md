@@ -159,7 +159,7 @@ flowchart TD
     Modules -.documented in.-> Workflows
 ```
 
-For the full set of architecture diagrams (eleven in total — covering trust tier flow, companion rule firing, the OPP/PRD/ADR lifecycle, and more) see [`docs/architecture/diagrams.md`](docs/architecture/diagrams.md).
+For the full set of architecture diagrams (twelve in total — covering trust tier flow, companion rule firing, the OPP/PRD/ADR lifecycle, and more) see [`docs/architecture/diagrams.md`](docs/architecture/diagrams.md).
 
 ### 1. Declare your modules
 
@@ -264,7 +264,7 @@ declares its governance contract. You compose them to match your project.
 | **Data** | Storage overlays | `relational-postgres`, `document-store`, `object-storage` |
 | **Delivery** | Lifecycle posture | `prototype`, `production-saas`, `internal-platform`, `self-hosted-oss`, `managed-fleet` |
 | **Management** | Product, project, program, knowledge, opportunity, and testing governance | `discovery-intake`, `product-lite`, `project-standard`, `program-lite`, `testing-standard`, `knowledge-capture`, `opportunity-capture` |
-| **Domains** | Vendor or specialist overlays | `supabase`, `web3`, `media-pipeline`, `gitbook` |
+| **Domains** | Vendor or specialist overlays | `supabase`, `web3`, `media-pipeline`, `gitbook`, `healthcare-fhir`, `healthcare-smart-on-fhir` |
 | **Agents** | AI-tool operating packs | `base`, `claude-code`, `generic-llm`, `openclaw` |
 
 Each `module.yaml` specifies:
@@ -320,6 +320,7 @@ Pre-built manifests for common project types. Copy the closest match and adjust:
 | [`agentic-ui-saas.yaml`](platform/compositions/agentic-ui-saas.yaml) | Node / TS | SaaS web-app shipping an in-product agentic interface (copilot or generative UI) |
 | [`mcp-server-typescript.yaml`](platform/compositions/mcp-server-typescript.yaml) | Node / TS | Projects shipping their own MCP server (producer-side: tools, transports, prompt-injection defense) |
 | [`mcp-server-typescript-oss.yaml`](platform/compositions/mcp-server-typescript-oss.yaml) | Node / TS | OSS-released MCP server (producer-side + `delivery/self-hosted-oss` + project-standard + knowledge-capture) |
+| [`healthcare-fhir-app.yaml`](platform/compositions/healthcare-fhir-app.yaml) | Any | FHIR + SMART-on-FHIR application — healthcare data layer + SMART app-launch/scopes, provider-launch + patient-access roles |
 
 ```bash
 cp platform/compositions/node-web-saas-postgres.yaml harness.manifest.yaml
@@ -548,7 +549,7 @@ The bootstrap is brownfield-safe — it never overwrites pre-existing files from
 │   │   ├── data/                    # relational-postgres, document-store, object-storage
 │   │   ├── delivery/                # prototype, production-saas, internal-platform
 │   │   ├── management/              # discovery-intake, product-lite, project-standard, program-lite, testing-standard, knowledge-capture, opportunity-capture
-│   │   └── domains/                 # supabase, web3, media-pipeline, gitbook
+│   │   └── domains/                 # supabase, web3, media-pipeline, gitbook, healthcare-fhir, healthcare-smart-on-fhir
 │   ├── agents/                      # Agent operating packs: base, claude-code, generic-llm, openclaw
 │   ├── skills/                      # Agent Skills: harness-governance, harness-testing, harness-web3, harness-onboarding, harness-tools, harness-agentic-interfaces, harness-mcp
 │   ├── templates/                   # Artifact skeletons for every required file
