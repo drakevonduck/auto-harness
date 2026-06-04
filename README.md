@@ -53,7 +53,7 @@ harness provides:
 - **Artifact requirements** — the files that must exist for a module to be considered active
   and governed (problem statement, ADRs, risk register, release checklist, etc.)
 - **Sensitive path governance** — patterns that trigger elevated human review when changed
-- **Validator chain** — fourteen shell scripts you run locally or in CI that enforce all of the above
+- **Validator chain** — fifteen shell scripts you run locally or in CI that enforce all of the above
 - **Agent adapters** — `CLAUDE.md`, `AGENTS.md`, and `.claude/settings.json` shims that load
   the governance rules into agent context at session start
 
@@ -142,7 +142,7 @@ flowchart TD
     end
 
     subgraph ENFORCE["Enforcement (CI)"]
-        Validators["<b>Validators</b><br/>14 scripts"]
+        Validators["<b>Validators</b><br/>15 scripts"]
         Validators -.reads.-> Manifest
         Validators -.reads.-> Companions
         Validators --> CIGate["<b>CI gates merge</b>"]
@@ -263,7 +263,7 @@ declares its governance contract. You compose them to match your project.
 | **Architectures** | Deployment and interaction patterns | `web-app`, `api-service`, `event-driven`, `mcp-server` |
 | **Data** | Storage overlays | `relational-postgres`, `document-store`, `object-storage` |
 | **Delivery** | Lifecycle posture | `prototype`, `production-saas`, `internal-platform`, `self-hosted-oss`, `managed-fleet` |
-| **Management** | Product, project, program, knowledge, opportunity, and testing governance | `discovery-intake`, `product-lite`, `project-standard`, `program-lite`, `testing-standard`, `knowledge-capture`, `opportunity-capture` |
+| **Management** | Product, project, program, knowledge, opportunity, and testing governance | `discovery-intake`, `product-lite`, `project-standard`, `program-lite`, `testing-standard`, `knowledge-capture`, `opportunity-capture`, `privacy-by-design` |
 | **Domains** | Vendor or specialist overlays | `supabase`, `web3`, `media-pipeline`, `gitbook`, `healthcare-fhir`, `healthcare-smart-on-fhir` |
 | **Agents** | AI-tool operating packs | `base`, `claude-code`, `generic-llm`, `openclaw` |
 
@@ -406,7 +406,7 @@ cp -r platform/skills/harness-governance .claude/skills/
 
 ## Validators
 
-Fourteen validators, each targeting a specific governance layer:
+Fifteen validators, each targeting a specific governance layer:
 
 | Validator | What It Checks |
 | --------- | -------------- |
@@ -548,7 +548,7 @@ The bootstrap is brownfield-safe — it never overwrites pre-existing files from
 │   │   ├── architectures/           # web-app, api-service, event-driven
 │   │   ├── data/                    # relational-postgres, document-store, object-storage
 │   │   ├── delivery/                # prototype, production-saas, internal-platform
-│   │   ├── management/              # discovery-intake, product-lite, project-standard, program-lite, testing-standard, knowledge-capture, opportunity-capture
+│   │   ├── management/              # discovery-intake, product-lite, project-standard, program-lite, testing-standard, knowledge-capture, opportunity-capture, privacy-by-design
 │   │   └── domains/                 # supabase, web3, media-pipeline, gitbook, healthcare-fhir, healthcare-smart-on-fhir
 │   ├── agents/                      # Agent operating packs: base, claude-code, generic-llm, openclaw
 │   ├── skills/                      # Agent Skills: harness-governance, harness-testing, harness-web3, harness-onboarding, harness-tools, harness-agentic-interfaces, harness-mcp
