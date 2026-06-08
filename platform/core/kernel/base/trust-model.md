@@ -35,6 +35,8 @@ Tiers form a strict ordering: tier 5 includes everything tier 4 authorizes,
 which includes everything tier 3 authorizes, and so on down. An agent
 operating at tier 3 is implicitly authorized to act at tiers 0, 1, and 2.
 
+![Trust tier ladder — the six tiers above, visualized; gated at tiers 4 and 5.](../../../../docs/_assets/proposed-visuals/trust-tier-ladder.svg)
+
 ## Kernel Rules
 
 - **Default permitted tier is declared by the active agent adapter.** The
